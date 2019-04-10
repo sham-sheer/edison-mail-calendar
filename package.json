@@ -201,6 +201,7 @@
     "electron": "^3.0.10",
     "electron-builder": "^20.34.0",
     "electron-devtools-installer": "^2.2.4",
+    "electron-rebuild": "^1.8.4",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.7.0",
     "enzyme-to-json": "^3.3.4",
@@ -256,6 +257,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.5.0",
+    "dav": "^1.8.0",
     "devtron": "^1.4.0",
     "electron-debug": "^2.0.0",
     "electron-log": "^2.2.17",
