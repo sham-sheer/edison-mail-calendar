@@ -16,9 +16,7 @@
     "no-case-declarations": 0,
     "no-debugger": 0,
     "no-param-reassign": 0,
-    "no-return-await": 0,
     "no-continue": 0,
-    "no-restricted-globals": 0,
     "no-return-assign": 0,
 
     "react/no-unused-state": 0,
@@ -28,6 +26,7 @@
     "jsx-a11y/no-noninteractive-element-interactions": 0,
     "jsx-a11y/label-has-for": 0,
     "jsx-a11y/label-has-associated-control": 0,
+
     "flowtype/no-weak-types": 0
   }
 }

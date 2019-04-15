@@ -153,7 +153,7 @@ export const authBeginMiddleware = store => next => action => {
     const url = buildAuthUrl();
     console.log(url);
     // window.open(url,"_blank",false);
-    location.href = url;
+    window.location.href = url;
     // window.location.replace(url)
     // console.log("here");
     // testFunc();

@@ -148,7 +148,8 @@ export const findSingleEventById = async (username, password, url, itemId) => {
   exch.Url = new Uri(url);
   exch.Credentials = new ExchangeCredentials(username, password);
 
-  return await Appointment.Bind(exch, new ItemId(itemId));
+  const appointment = await Appointment.Bind(exch, new ItemId(itemId));
+  return appointment;
 };
 
 export const asyncDeleteSingleEventById = async (
