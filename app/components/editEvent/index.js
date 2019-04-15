@@ -100,7 +100,7 @@ export default class EditEvent extends React.Component {
 
   handleSubmit = async e => {
     e.preventDefault();
-    // console.log(this.props);
+    console.log(this.props, this.state);
 
     const { props, state } = this;
 
@@ -135,9 +135,12 @@ export default class EditEvent extends React.Component {
         const editResp = await editGoogleEvent(state.id, eventPatch);
         return editResp;
       case EXCHANGE:
-        const user = props.providers.EXCHANGE.filter(
-          object => object.email === state.owner
-        )[0]; // this validates which user the event belongs to, by email.
+        const user = props.providers.EXCHANGE.filter(object => {
+          console.log(object.email, state.owner);
+          return object.email === state.owner;
+        })[0]; // this validates which user the event belongs to, by email.
+
+        console.log(user);
 
         const singleAppointment = await findSingleEventById(
           user.email,

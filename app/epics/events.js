@@ -107,6 +107,7 @@ export const beginPostEventEpics = action$ =>
   action$.pipe(
     ofType(POST_EVENT_BEGIN),
     mergeMap(action => {
+      console.log(action.payload);
       if (action.payload.providerType === Providers.GOOGLE) {
         return from(postEvent(action.payload)).pipe(
           map(resp =>
@@ -123,7 +124,13 @@ export const beginPostEventEpics = action$ =>
       }
       if (action.payload.providerType === Providers.EXCHANGE) {
         return from(postEventsExchange(action.payload)).pipe(
-          map(resp => postEventSuccess([resp], action.payload.providerType)),
+          map(resp =>
+            postEventSuccess(
+              [resp],
+              action.payload.providerType,
+              action.payload.auth.email
+            )
+          ),
           catchError(error => apiFailure(error))
         );
       }

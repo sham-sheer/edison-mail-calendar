@@ -63,11 +63,12 @@ export const getEventsSuccess = (response, providerType, owner) => ({
   }
 });
 
-export const postEventSuccess = (response, providerType) => ({
+export const postEventSuccess = (response, providerType, owner) => ({
   type: POST_EVENT_SUCCESS,
   payload: {
     data: response,
-    providerType
+    providerType,
+    owner
   }
 });
 

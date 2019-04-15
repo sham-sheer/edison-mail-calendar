@@ -50,7 +50,8 @@ export const retrieveEventsEpic = action$ =>
                 recurrence: singleEvent.recurrence,
                 iCalUID: singleEvent.iCalUID,
                 attendees: singleEvent.attendees,
-                originalId: singleEvent.originalId
+                originalId: singleEvent.originalId,
+                owner: singleEvent.owner
               }))
             ),
             map(results => updateStoredEvents(results))
