@@ -2,27 +2,31 @@ import React, { Component } from 'react';
 import Select from 'react-select';
 
 class Conference extends Component {
-  handleSelectChange = (conference) => {
-    this.props.onConferChanged({
-      name: this.props.name,
+  handleSelectChange = conference => {
+    const { props } = this;
+    props.onConferChanged({
+      name: props.name,
       value: conference.value
-    })
-  }
+    });
+  };
+
   render() {
     const options = [
       { value: 'Hangouts', label: 'Hangouts' },
-      { value: 'No Conferencing', label: 'No Conferencing' },
+      { value: 'No Conferencing', label: 'No Conferencing' }
     ];
-    return(
+    const { props } = this;
+
+    return (
       <div>
         <h5>Conferencing</h5>
         <Select
-         value={this.props.conference}
-         options={options}
-         onChange={this.handleSelectChange}
+          value={props.conference}
+          options={options}
+          onChange={this.handleSelectChange}
         />
       </div>
-    )
+    );
   }
 }
 

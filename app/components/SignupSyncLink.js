@@ -1,30 +1,34 @@
-import React from "react";
+import React from 'react';
 
 export default class signupSyncLink extends React.Component {
-  capitalize = (s) => {
+  capitalize = s => {
     if (typeof s !== 'string') return '';
     return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-  }
+  };
 
   render() {
-    if (this.props.providerInfo.length <= 0) {
-      return <div></div>;
+    const { props } = this;
+    if (props.providerInfo.length <= 0) {
+      return <div />;
     }
 
-    var renderArray = [];
-    for(var i = 0; i < this.props.providerInfo.length; i++) {
+    const renderArray = [];
+    for (let i = 0; i < props.providerInfo.length; i += 1) {
       renderArray.push(
-        <button className="btn btn-block btn-social" key={i}
-          onClick={() => this.props.providerFunc()}>
-          <span className="fa fa-outlook"></span>
-        Sync {this.props.providerInfo[i].email} token, token expired!
-        </button>);
+        <button
+          type="button"
+          className="btn btn-block btn-social"
+          key={i}
+          onClick={() => props.providerFunc()}
+        >
+          <span className="fa fa-outlook" />
+          Sync {props.providerInfo[i].email} token, token expired!
+        </button>
+      );
     }
 
     return (
-      <>
-      {renderArray}
-      </>
+      <div>{renderArray}</div>
       // <div>
       //   <a>
       //     <button className="btn btn-block btn-social"
@@ -34,12 +38,12 @@ export default class signupSyncLink extends React.Component {
       //     </button>
       //   </a>
 
-    //   <button className="btn btn-block btn-social"
-    //     onClick={() => {console.log(this.state.temp_outlookUser); this.props.beginGetOutlookEvents(this.state.temp_outlookUser);}}>
-    //     <span className="fa fa-google"></span>
-    //     Get {this.capitalize(this.props.providerType)} Events
-    //   </button>
-    // </div>
+      //   <button className="btn btn-block btn-social"
+      //     onClick={() => {console.log(this.state.temp_outlookUser); this.props.beginGetOutlookEvents(this.state.temp_outlookUser);}}>
+      //     <span className="fa fa-google"></span>
+      //     Get {this.capitalize(this.props.providerType)} Events
+      //   </button>
+      // </div>
     );
   }
 }

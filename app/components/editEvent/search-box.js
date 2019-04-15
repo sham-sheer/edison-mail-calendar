@@ -1,5 +1,5 @@
-import React, { Component, Fragment } from "react";
-import PropTypes from "prop-types";
+import React, { Component, Fragment } from 'react';
+import PropTypes from 'prop-types';
 
 class SearchBox extends Component {
   static propTypes = {
@@ -21,7 +21,7 @@ class SearchBox extends Component {
       // Whether or not the suggestion list is shown
       showSuggestions: false,
       // What the user has entered
-      userInput: ""
+      userInput: ''
     };
   }
 
@@ -54,6 +54,7 @@ class SearchBox extends Component {
 
   onKeyDown = e => {
     const { activeSuggestion, filteredSuggestions } = this.state;
+    const { props, state } = this;
 
     // User pressed the enter key
     if (e.keyCode === 13) {
@@ -62,8 +63,8 @@ class SearchBox extends Component {
         showSuggestions: false,
         userInput: filteredSuggestions[activeSuggestion]
       });
-      this.props.attendeeSelected({
-        email: this.state.userInput
+      props.attendeeSelected({
+        email: state.userInput
       });
     }
     // User pressed the up arrow
@@ -108,7 +109,7 @@ class SearchBox extends Component {
 
               // Flag the active suggestion with a class
               if (index === activeSuggestion) {
-                className = "suggestion-active";
+                className = 'suggestion-active';
               }
 
               return (
@@ -122,7 +123,7 @@ class SearchBox extends Component {
       } else {
         suggestionsListComponent = (
           <div className="no-suggestions">
-            <em>No suggestions, you're on your own!</em>
+            <em>No suggestions, you&apos;re on your own!</em>
           </div>
         );
       }

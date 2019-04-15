@@ -19,17 +19,18 @@ export const createDb = async () => {
     adapter: 'idb',
     queryChangeDetection: true
   });
-  window['db'] = db;
+  window.db = db;
   await Promise.all(
-    Object.entries(schemas)
-      .map(([name, schema]) => db.collection({ name, schema }))
+    Object.entries(schemas).map(([name, schema]) =>
+      db.collection({ name, schema })
+    )
   );
   return db;
 };
 
 export default () => {
-  //RxDB.removeDatabase('eventsdb', 'idb');
-  if(!dbPromise) {
+  // RxDB.removeDatabase('eventsdb', 'idb');
+  if (!dbPromise) {
     dbPromise = createDb();
   }
   return dbPromise;

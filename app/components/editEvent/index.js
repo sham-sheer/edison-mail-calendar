@@ -1,6 +1,13 @@
 /* global google */
 import React from 'react';
-import Location from "./location";
+import moment from 'moment';
+
+import {
+  ConflictResolutionMode,
+  SendInvitationsOrCancellationsMode
+} from 'ews-javascript-api';
+
+import Location from './location';
 import Attendees from './attendees';
 import Date from './date';
 import Time from './time';
@@ -8,14 +15,17 @@ import Conference from './conference';
 import Checkbox from './checkbox';
 import getDb from '../../db';
 import { loadClient, editGoogleEvent } from '../../utils/client/google';
-import { dropDownTime, momentAdd } from '../../utils/constants';
 import { findSingleEventById } from '../../utils/client/exchange';
-import moment from 'moment';
 import './index.css';
 /* global google */
-
-import * as ProviderTypes from '../../utils/constants';
-import { ConflictResolutionMode, SendInvitationsOrCancellationsMode } from 'ews-javascript-api';
+import {
+  dropDownTime,
+  momentAdd,
+  filterIntoSchema,
+  OUTLOOK,
+  EXCHANGE,
+  GOOGLE
+} from '../../utils/constants';
 
 export default class EditEvent extends React.Component {
   constructor(props) {
@@ -41,17 +51,17 @@ export default class EditEvent extends React.Component {
   }
 
   componentDidMount() {
-    this.retrieveEvent(this.props.match.params.id);
+    const { props } = this;
+    this.retrieveEvent(props.match.params.id);
     console.log(this.props);
   }
 
-
-  //find a way to handle all different inputs
-  handleChange = (event) => {
-    if(event.target !== undefined) {
+  // find a way to handle all different inputs
+  handleChange = event => {
+    if (event.target !== undefined) {
       this.setState({
         [event.target.name]: event.target.value
-      })
+      });
       // if(event.target.checked !== undefined) {
       //   this.setState({ allDay: event.target.checked })
       // } else {
@@ -62,83 +72,100 @@ export default class EditEvent extends React.Component {
       //     [name]: value
       //   });
       // }
-    }
-    else {
+    } else {
       this.setState({
-        [event.name] : event.value
-      })
+        [event.name]: event.value
+      });
     }
-  }
-  handleInputChange = (event) => {
-    const target = event.target;
-    const value = target.value;
-    const name = target.name;
+  };
+
+  handleInputChange = event => {
+    const { target } = event;
+    const { value } = target;
+    const { name } = target;
     this.setState({
       [name]: value
     });
-  }
+  };
 
-  handleReactSelect = (event) => {
+  handleReactSelect = event => {
     this.setState({
-      [event.name] : event.value
-    })
-  }
+      [event.name]: event.value
+    });
+  };
 
   handleCheckboxChange = event => {
-    this.setState({ allDay: event.target.checked })
-  }
+    this.setState({ allDay: event.target.checked });
+  };
 
-  handleSubmit = async (e) => {
+  handleSubmit = async e => {
     e.preventDefault();
-    console.log(this.props);
+    // console.log(this.props);
 
-    switch (this.state.providerType) {
-      case ProviderTypes.GOOGLE:
+    const { props, state } = this;
+
+    switch (state.providerType) {
+      case GOOGLE:
         await loadClient();
         // Error Handling
-        const startDateTime = momentAdd(this.state.startDay, this.state.startTime);
-        const endDateTime = momentAdd(this.state.endDay, this.state.endTime);
+        const startDateTime = momentAdd(state.startDay, state.startTime);
+        const endDateTime = momentAdd(state.endDay, state.endTime);
 
-        console.log(startDateTime,endDateTime);
+        console.log(startDateTime, endDateTime);
 
-        const attendeeForAPI = this.state.attendees.map(attendee => {
-          return {
-            email: attendee.value
-          }
-        })
-        let eventPatch = {
-          summary: this.state.title,
+        const attendeeForAPI = state.attendees.map(attendee => ({
+          email: attendee.value
+        }));
+        const eventPatch = {
+          summary: state.title,
           start: {
             dateTime: startDateTime
           },
           end: {
             dateTime: endDateTime
           },
-          location: this.state.place.name,
-          attendees: attendeeForAPI,
+          location: state.place.name,
+          attendees: attendeeForAPI
         };
-        if(this.state.conference.label === 'Hangouts') {
+        if (state.conference.label === 'Hangouts') {
           eventPatch.conferenceData = {
-            createRequest: {requestId: "7qxalsvy0e"}
-          }
+            createRequest: { requestId: '7qxalsvy0e' }
+          };
         }
-        const editResp = await editGoogleEvent(this.state.id, eventPatch);
+        const editResp = await editGoogleEvent(state.id, eventPatch);
         return editResp;
-      case ProviderTypes.EXCHANGE:
-        let user = this.props.providers.EXCHANGE.filter(object => object.email === this.state.owner)[0];  // this validates which user the event belongs to, by email. 
+      case EXCHANGE:
+        const user = props.providers.EXCHANGE.filter(
+          object => object.email === state.owner
+        )[0]; // this validates which user the event belongs to, by email.
 
-        var singleAppointment = await findSingleEventById(user.email, user.password, "https://outlook.office365.com/Ews/Exchange.asmx", this.state.id)
-        
-        singleAppointment.Subject = this.state.title;
-        singleAppointment.Location = this.state.place.name;
+        const singleAppointment = await findSingleEventById(
+          user.email,
+          user.password,
+          'https://outlook.office365.com/Ews/Exchange.asmx',
+          state.id
+        );
 
-        singleAppointment.Update(ConflictResolutionMode.AlwaysOverwrite,SendInvitationsOrCancellationsMode.SendToNone).then(async success => {
-          const db = await getDb();
-          const doc = await db.events.upsert(ProviderTypes.filterIntoSchema(singleAppointment,ProviderTypes.EXCHANGE, user.email));
-          this.props.history.push('/');
-        }, error => {
-          console.log(error);
-        });
+        singleAppointment.Subject = state.title;
+        singleAppointment.Location = state.place.name;
+
+        singleAppointment
+          .Update(
+            ConflictResolutionMode.AlwaysOverwrite,
+            SendInvitationsOrCancellationsMode.SendToNone
+          )
+          .then(
+            async success => {
+              const db = await getDb();
+              const doc = await db.events.upsert(
+                filterIntoSchema(singleAppointment, EXCHANGE, user.email)
+              );
+              props.history.push('/');
+            },
+            error => {
+              console.log(error);
+            }
+          );
         break;
       default:
         break;
@@ -171,9 +198,9 @@ export default class EditEvent extends React.Component {
     // }
     // const editResp = await editGoogleEvent(this.state.id, eventPatch);
     // return editResp;
-  }
+  };
 
-  // // So the plan here is, 
+  // // So the plan here is,
   // /*
   //   In order to edit a generic event, we have to choose for each individual event.
 
@@ -182,11 +209,15 @@ export default class EditEvent extends React.Component {
   //   Exchange - This one requires more thought.
   //     Exchange updates the data different. Not a post request. A function call in the ews-javascript-api call.
   //     Have to think how to call the function when I might not have the object. This means that perhaps I should store the object in the main object.
-  //     In order to retrive the event, I need to make a query from the script to get the javascript ews object. However, once I have it, I can update it easily. 
+  //     In order to retrive the event, I need to make a query from the script to get the javascript ews object. However, once I have it, I can update it easily.
   // */
-  retrieveEvent = async (id) => {
+  retrieveEvent = async id => {
     const db = await getDb();
-    const dbEvent = await db.events.find().where("id").eq(id).exec();
+    const dbEvent = await db.events
+      .find()
+      .where('id')
+      .eq(id)
+      .exec();
     const dbEventJSON = dbEvent[0].toJSON();
     console.log(dbEventJSON);
 
@@ -199,90 +230,78 @@ export default class EditEvent extends React.Component {
       attendees: dbEventJSON.attendees,
       hangoutLink: dbEventJSON.hangoutLink,
       providerType: dbEventJSON.providerType,
-      owner: dbEventJSON.owner,
-    })
-  }
+      owner: dbEventJSON.owner
+    });
+  };
 
   render() {
     // All Day option will help out here.
     let parseStart = '';
     let parseEnd = '';
-    if(this.state.start.dateTime !== undefined) {
-      parseStart = this.state.start.dateTime.substring(0, 16);
-      parseEnd = this.state.end.dateTime.substring(0, 16);
+
+    const { props, state } = this;
+
+    if (state.start.dateTime !== undefined) {
+      parseStart = state.start.dateTime.substring(0, 16);
+      parseEnd = state.end.dateTime.substring(0, 16);
     } else {
-      parseStart = this.state.start.date
-      parseEnd = this.state.end.date
+      parseStart = state.start.date;
+      parseEnd = state.end.date;
     }
     return (
       <div className="edit-container">
-       <form
-          onSubmit={this.handleSubmit}
-          onChange={this.handleChange}
-        >
-        <input
-          name="title"
-          type="text"
-          defaultValue={this.state.title}
-        >
-        </input>
-        <input
-          name="description"
-          type="text"
-          defaultValue={this.state.description}
-          placeholder="Event Description"
-        >
-        </input>
-       <div className="flex-container">
-        <Date
-          dayProps={this.handleChange}
-          name="startDay"
-        />
-        <Time
-          timeProps={this.handleChange}
-          currentTime={this.state.startTime}
-          name="startTime"
-          dropDownTime={dropDownTime('')}
-        />
-        <span>to</span>
-        <Date
-          dayProps={this.handleChange}
-          name="endDay"
-          startDate={this.state.startDay}
-        />
-        <Time
-          timeProps={this.handleChange}
-          currentTime={this.state.endTime}
-          name="endTime"
-          dropDownTime={dropDownTime(this.state.startTime)}
-        />
-        <div style={{ fontFamily: 'system-ui' }}>
-        <label>
-          <Checkbox
-            checked={this.state.allDay}
-            onChange={this.handleChange}
+        <form onSubmit={this.handleSubmit} onChange={this.handleChange}>
+          <input name="title" type="text" defaultValue={state.title} />
+          <input
+            name="description"
+            type="text"
+            defaultValue={state.description}
+            placeholder="Event Description"
           />
-          <span style={{ marginLeft: 8 }}>All Day</span>
-        </label>
-        </div>
-       </div>
-       <Location
-          onPlaceChanged={this.handleChange.bind(this)}
-          place={this.state.place}
-          name="place"
-       />
-       <Attendees
-          onAttendeeChanged={this.handleChange.bind(this)}
-          attendees={this.state.attendees}
-          name="attendees"
-       />
-       <Conference
-          onConferChanged={this.handleChange.bind(this)}
-          name="conference"
-          conference={this.state.conference}
-        />
-       <input type="submit" value="Submit"></input>
-       </form>
+          <div className="flex-container">
+            <Date dayProps={this.handleChange} name="startDay" />
+            <Time
+              timeProps={this.handleChange}
+              currentTime={state.startTime}
+              name="startTime"
+              dropDownTime={dropDownTime('')}
+            />
+            <span>to</span>
+            <Date
+              dayProps={this.handleChange}
+              name="endDay"
+              startDate={state.startDay}
+            />
+            <Time
+              timeProps={this.handleChange}
+              currentTime={state.endTime}
+              name="endTime"
+              dropDownTime={dropDownTime(state.startTime)}
+            />
+            <div style={{ fontFamily: 'system-ui' }}>
+              <label>
+                <Checkbox checked={state.allDay} onChange={this.handleChange} />
+                <span style={{ marginLeft: 8 }}>All Day</span>
+              </label>
+            </div>
+          </div>
+          <Location
+            onPlaceChanged={this.handleChange.bind(this)}
+            place={state.place}
+            name="place"
+          />
+          <Attendees
+            onAttendeeChanged={this.handleChange.bind(this)}
+            attendees={state.attendees}
+            name="attendees"
+          />
+          <Conference
+            onConferChanged={this.handleChange.bind(this)}
+            name="conference"
+            conference={state.conference}
+          />
+          <input type="submit" value="Submit" />
+        </form>
       </div>
     );
   }

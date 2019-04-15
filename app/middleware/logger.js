@@ -1,3 +1,5 @@
 import { createLogger } from 'redux-logger';
 
-export const loggerMiddleware = createLogger();
+const loggerMiddleware = createLogger();
+
+export default loggerMiddleware;

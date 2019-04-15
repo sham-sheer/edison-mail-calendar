@@ -4,24 +4,23 @@ import {
   storeEventsEpic,
   beginStoreEventsEpic,
   deleteEventEpics
+  // updateStoreEventsEpic
 } from './db/events';
 import {
   beginGetEventsEpics,
   beginGetOutlookEventsEpics,
   beginGetExchangeEventsEpics,
   beginPostEventEpics,
-  clearAllEventsEpics,
+  clearAllEventsEpics
 } from './events';
-import {
-  storeEventPersonEpic
-} from './db/eventPersons';
+import storeEventPersonEpic from './db/eventPersons';
 import {
   storeGoogleAuthEpic,
   storeOutLookAuthEpic,
   storeExchangeAuthEpic
 } from './db/auth';
 
-export const rootEpic = combineEpics(
+const rootEpic = combineEpics(
   retrieveEventsEpic,
   storeEventsEpic,
   beginStoreEventsEpic,
@@ -30,8 +29,11 @@ export const rootEpic = combineEpics(
   beginGetExchangeEventsEpics,
   beginPostEventEpics,
   deleteEventEpics,
+  // updateStoreEventsEpic,
   clearAllEventsEpics,
   storeGoogleAuthEpic,
   storeOutLookAuthEpic,
-  storeExchangeAuthEpic,
+  storeExchangeAuthEpic
 );
+
+export default rootEpic;

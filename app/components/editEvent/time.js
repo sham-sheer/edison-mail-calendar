@@ -1,27 +1,28 @@
-import { dropDownTime } from '../../utils/constants';
 import React, { Component } from 'react';
 import Select from 'react-select';
+import { dropDownTime } from '../../utils/constants';
 import './time.css';
 
 class Time extends Component {
-  handleSelectChange = (time) => {
-    this.props.timeProps({
-      name: this.props.name,
+  handleSelectChange = time => {
+    const { props } = this;
+    props.timeProps({
+      name: props.name,
       value: time.value
     });
-  }
-
+  };
 
   render() {
+    const { props } = this;
     const currentTimeObj = {
-      value: this.props.currentTime,
-      label: this.props.currentTime,
-    }
-    return(
-      <div >
+      value: props.currentTime,
+      label: props.currentTime
+    };
+    return (
+      <div>
         <Select
           value={currentTimeObj}
-          options={this.props.dropDownTime}
+          options={props.dropDownTime}
           onChange={this.handleSelectChange}
         />
       </div>

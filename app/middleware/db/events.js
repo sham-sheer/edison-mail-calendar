@@ -1,4 +1,4 @@
-/*import getDb from '../../db';
+/* import getDb from '../../db';
 import md5 from 'md5';
 import { normalize, schema } from 'normalizr';
 
@@ -54,9 +54,9 @@ async function retrieveEvents() {
     })
   }
   return next(action);
-}*/
+} */
 
-/*export const apiSuccessToDbMiddleware = store => next => action => {
+/* export const apiSuccessToDbMiddleware = store => next => action => {
   if(action.type === 'POST_EVENT_SUCCESS') {
     next({
       type: 'BEGIN_STORE_EVENTS',
@@ -105,4 +105,4 @@ const filter = (events) => {
   else {
     return [];
   }
-}*/
+} */

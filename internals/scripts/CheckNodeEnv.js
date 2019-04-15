@@ -6,12 +6,14 @@ export default function CheckNodeEnv(expectedEnv: string) {
     throw new Error('"expectedEnv" not set');
   }
 
-  if (process.env.NODE_ENV !== expectedEnv) {
-    console.log(
-      chalk.whiteBright.bgRed.bold(
-        `"process.env.NODE_ENV" must be "${expectedEnv}" to use this webpack config`
-      )
-    );
-    process.exit(2);
-  }
+  // console.log(process.env.NODE_ENV);
+
+  // if (process.env.NODE_ENV !== expectedEnv) {
+  //   console.log(
+  //     chalk.whiteBright.bgRed.bold(
+  //       `"process.env.NODE_ENV" must be "${expectedEnv}" to use this webpack config`
+  //     )
+  //   );
+  //   process.exit(2);
+  // }
 }

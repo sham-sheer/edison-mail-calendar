@@ -10,8 +10,7 @@ export const MOVE_EVENT_BEGIN = 'BEGIN_MOVE_EVENT';
 export const MOVE_EVENT_SUCCESS = 'MOVE_EVENT_SUCCESS';
 export const MOVE_EVENT_FAILURE = 'MOVE_EVENT_FAILURE';
 
-
-//You good bro?
+// You good bro?
 export const EDIT_EVENT_BEGIN = 'EDIT_EVENT_BEGIN';
 export const EDIT_EVENT_SUCCESS = 'EDIT_EVENT_SUCCESS';
 export const EDIT_EVENT_FAILURE = 'EDIT_EVENT_FAILURE';
@@ -34,7 +33,7 @@ export const DELETE_EVENT_FAILURE_API = 'DELETE_EVENT_FAILURE_API';
 
 export const API_ERROR = 'API_ERROR';
 
-export const beginGetGoogleEvents = (resp) => ({
+export const beginGetGoogleEvents = resp => ({
   type: GET_EVENTS_BEGIN,
   payload: resp
 });
@@ -43,15 +42,15 @@ export const postEventBegin = (calEvent, auth, providerType) => ({
   type: POST_EVENT_BEGIN,
   payload: {
     data: calEvent,
-    auth: auth,
-    providerType: providerType,
+    auth,
+    providerType
   }
 });
 
-export const getEventsFailure = (error) => ({
+export const getEventsFailure = error => ({
   type: GET_EVENTS_FAILURE,
   payload: {
-    error: error,
+    error
   }
 });
 
@@ -59,8 +58,8 @@ export const getEventsSuccess = (response, providerType, owner) => ({
   type: GET_EVENTS_SUCCESS,
   payload: {
     data: response,
-    providerType: providerType,
-    owner: owner,       // owner is needed as there are chances that the email is not readable for EXCHANGE servers.
+    providerType,
+    owner // owner is needed as there are chances that the email is not readable for EXCHANGE servers.
   }
 });
 
@@ -68,12 +67,17 @@ export const postEventSuccess = (response, providerType) => ({
   type: POST_EVENT_SUCCESS,
   payload: {
     data: response,
-    providerType: providerType,
+    providerType
   }
 });
 
-export const beginDeleteEvent = (id) => ({
+export const beginDeleteEvent = id => ({
   type: DELETE_EVENT_BEGIN,
+  payload: id
+});
+
+export const deleteEventSuccess = id => ({
+  type: DELETE_EVENT_SUCCESS,
   payload: id
 });
 
@@ -82,20 +86,20 @@ export const GET_OUTLOOK_EVENTS_BEGIN = 'GET_OUTLOOK_EVENTS_BEGIN';
 export const GET_OUTLOOK_EVENTS_SUCCESS = 'GET_OUTLOOK_EVENTS_SUCCESS';
 export const GET_OUTLOOK_EVENTS_FAILURE = 'GET_OUTLOOK_EVENTS_FAILURE';
 
-export const beginGetOutlookEvents = (resp) => ({
+export const beginGetOutlookEvents = resp => ({
   type: GET_OUTLOOK_EVENTS_BEGIN,
   payload: resp
 });
 
-export const postOutlookEventBegin = (calEvent) => ({
+export const postOutlookEventBegin = calEvent => ({
   type: GET_OUTLOOK_EVENTS_FAILURE,
   payload: calEvent
 });
 
-export const getOutlookEventsSuccess = (response) => ({
+export const getOutlookEventsSuccess = response => ({
   type: GET_OUTLOOK_EVENTS_SUCCESS,
   payload: {
-    data: response,
+    data: response
   }
 });
 // ---------------------- OUTLOOK ---------------------- //
@@ -104,25 +108,25 @@ export const getOutlookEventsSuccess = (response) => ({
 export const editEventBegin = (id, eventObject, providerType) => ({
   type: EDIT_EVENT_BEGIN,
   payload: {
-    id: id,
+    id,
     data: eventObject,
-    providerType: providerType
+    providerType
   }
-})
+});
 
-export const editEventSuccess = (resp) => ({
+export const editEventSuccess = resp => ({
   type: EDIT_EVENT_SUCCESS,
   payload: {
     resp
   }
-})
+});
 
-export const apiFailure = (error) => ({
+export const apiFailure = error => ({
   type: API_ERROR,
   payload: {
     error
   }
-})
+});
 // ---------------------- EDIT EVENTS ---------------------- //
 
 // ---------------------- EXCHANGE ---------------------- //
@@ -130,12 +134,12 @@ export const GET_EXCHANGE_EVENTS_BEGIN = 'GET_EXCHANGE_EVENTS_BEGIN';
 export const GET_EXCHANGE_EVENTS_SUCCESS = 'GET_EXCHANGE_EVENTS_SUCCESS';
 export const GET_EXCHANGE_EVENTS_FAILURE = 'GET_EXCHANGE_EVENTS_FAILURE';
 
-export const beginGetExchangeEvents = (resp) => ({
+export const beginGetExchangeEvents = resp => ({
   type: GET_EXCHANGE_EVENTS_BEGIN,
   payload: resp
 });
 
-export const getExchangeEventsSuccess = (resp) => ({
+export const getExchangeEventsSuccess = resp => ({
   type: GET_EXCHANGE_EVENTS_SUCCESS,
   payload: resp
 });
@@ -146,10 +150,10 @@ export const CLEAR_ALL_EVENTS = 'CLEAR_ALL_EVENTS';
 export const SUCCESS_CLEAR_ALL_EVENTS = 'SUCCESS_CLEAR_ALL_EVENTS';
 
 export const clearAllEvents = () => ({
-  type: CLEAR_ALL_EVENTS,
+  type: CLEAR_ALL_EVENTS
 });
 
 export const clearAllEventsSuccess = () => ({
-  type: SUCCESS_CLEAR_ALL_EVENTS,
+  type: SUCCESS_CLEAR_ALL_EVENTS
 });
 // ---------------------- GENERAL ---------------------- //

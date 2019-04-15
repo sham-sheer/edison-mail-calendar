@@ -7,11 +7,11 @@ import { createLogger } from 'redux-logger';
 // import type { counterStateType } from '../reducers/types';
 
 // new stuff
+import { createEpicMiddleware } from 'redux-observable';
 import createRootReducer from '../reducers';
 import { authBeginMiddleware, authSuccessMiddleware } from '../middleware/auth';
-import { loggerMiddleware } from '../middleware/logger';
-import { rootEpic } from '../epics';
-import { createEpicMiddleware } from 'redux-observable';
+import loggerMiddleware from '../middleware/logger';
+import rootEpic from '../epics';
 // new stuff
 
 const history = createHashHistory();
@@ -48,23 +48,34 @@ const configureStore = (initialState?: counterStateType) => {
   // };
   // If Redux DevTools Extension is installed use it, otherwise use Redux compose
   /* eslint-disable no-underscore-dangle */
-  const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+  const composeEnhancers =
+    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
   /* eslint-enable no-underscore-dangle */
 
   // Apply Middleware & Compose Enhancers
-  enhancers.push(applyMiddleware(...middleware, 
-    authBeginMiddleware,
-    authSuccessMiddleware,
-    epicMiddleware,
-    loggerMiddleware));
+  enhancers.push(
+    applyMiddleware(
+      ...middleware,
+      authBeginMiddleware,
+      authSuccessMiddleware,
+      epicMiddleware,
+      loggerMiddleware
+    )
+  );
   const enhancer = composeEnhancers(...enhancers);
 
   // Create Store
-  const store = createStore(rootReducer, composeEnhancers(applyMiddleware(
-    authBeginMiddleware,
-    authSuccessMiddleware,
-    epicMiddleware,
-    loggerMiddleware)));
+  const store = createStore(
+    rootReducer,
+    composeEnhancers(
+      applyMiddleware(
+        authBeginMiddleware,
+        authSuccessMiddleware,
+        epicMiddleware,
+        loggerMiddleware
+      )
+    )
+  );
 
   if (module.hot) {
     module.hot.accept(
