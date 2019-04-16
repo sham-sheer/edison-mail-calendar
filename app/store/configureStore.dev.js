@@ -2,10 +2,12 @@ import { createStore, applyMiddleware, compose } from 'redux';
 import thunk from 'redux-thunk';
 import { createHashHistory } from 'history';
 import { routerMiddleware, routerActions } from 'connected-react-router';
+import { createEpicMiddleware } from 'redux-observable';
 import { createLogger } from 'redux-logger';
 import createRootReducer from '../reducers';
-import * as counterActions from '../actions/counter';
+import * as caldavActions from '../caldav/actions';
 import type { counterStateType } from '../reducers/types';
+import rootEpic from '../caldav/epics';
 
 const history = createHashHistory();
 
@@ -34,10 +36,14 @@ const configureStore = (initialState?: counterStateType) => {
   const router = routerMiddleware(history);
   middleware.push(router);
 
+  // Epics Middleware
+  const epics = createEpicMiddleware();
+  middleware.push(epics);
+
   // Redux DevTools Configuration
   const actionCreators = {
-    ...counterActions,
-    ...routerActions
+    ...routerActions,
+    ...caldavActions
   };
   // If Redux DevTools Extension is installed use it, otherwise use Redux compose
   /* eslint-disable no-underscore-dangle */
@@ -55,6 +61,9 @@ const configureStore = (initialState?: counterStateType) => {
 
   // Create Store
   const store = createStore(rootReducer, initialState, enhancer);
+
+  // Run Epics Middleware
+  epics.run(rootEpic);
 
   if (module.hot) {
     module.hot.accept(
