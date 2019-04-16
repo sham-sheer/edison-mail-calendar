@@ -107,18 +107,17 @@ export const beginPostEventEpics = action$ =>
   action$.pipe(
     ofType(POST_EVENT_BEGIN),
     mergeMap(action => {
-      console.log(action.payload);
       if (action.payload.providerType === Providers.GOOGLE) {
         return from(postEvent(action.payload)).pipe(
-          map(resp =>
-            postEventSuccess([resp.result], action.payload.providerType)
+          map(
+            resp => postEventSuccess([resp.result], action.payload.providerType) // Think if you need to pass in owner here
           ),
           catchError(error => apiFailure(error))
         );
       }
       if (action.payload.providerType === Providers.OUTLOOK) {
         return from(postEventsOutlook(action.payload)).pipe(
-          map(resp => postEventSuccess([resp], action.payload.providerType)),
+          map(resp => postEventSuccess([resp], action.payload.providerType)), // Think if you need to pass in owner here
           catchError(error => apiFailure(error))
         );
       }
@@ -205,6 +204,7 @@ const postEventsExchange = payload =>
     newEvent.End = new DateTime(
       moment.tz(payload.data.end.dateTime, payload.data.end.timezone)
     );
+    console.log('New Exchange Event!!', newEvent);
     newEvent
       .Save(
         WellKnownFolderName.Calendar,
