@@ -125,7 +125,7 @@ export default {
       type: 'string'
     },
     organizer: {
-      type: 'object'
+      type: 'string'
     },
     // ----------------------------------------------- //
     start: {
@@ -190,11 +190,8 @@ export default {
       type: 'number'
     },
     // ----------------------------------------------- //
-    attendees: {
-      type: 'array',
-      item: {
-        type: 'object'
-      }
+    attendee: {
+      type: 'array'
     },
     // ----------------------------------------------- //
     anyoneCanAddSelf: {
@@ -219,8 +216,8 @@ export default {
       type: 'boolean'
     },
     // ----------------------------------------------- //
-    calenderId: {
-      type: 'number'
+    calendarId: {
+      type: 'string'
     },
     hangoutLink: {
       type: 'string'
@@ -246,6 +243,12 @@ export default {
     },
     incomplete: {
       // incomplete is a flag to mark that it was just created and might not be complete
+      type: 'boolean'
+    },
+    metaData: {
+      type: 'object'
+    },
+    isRecurring: {
       type: 'boolean'
     }
   },
