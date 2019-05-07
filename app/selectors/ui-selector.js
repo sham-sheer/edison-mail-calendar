@@ -1,5 +1,6 @@
 import { createSelector } from 'reselect';
 import moment from 'moment';
+import uniqid from 'uniqid';
 
 const getEvents = state => state.events.calEvents;
 
@@ -11,7 +12,7 @@ const getFilteredEvents = createSelector(
     const formatedEvents = data.map(eachEvent => {
       if (eachEvent.end.date === undefined) {
         return {
-          id: eachEvent.id,
+          id: uniqid(),
           title: eachEvent.summary,
           end: new Date(eachEvent.end.dateTime),
           start: new Date(eachEvent.start.dateTime)
@@ -19,7 +20,7 @@ const getFilteredEvents = createSelector(
       }
 
       return {
-        id: eachEvent.id,
+        id: uniqid(),
         title: eachEvent.summary,
         end: new Date(moment(eachEvent.end.date).format()),
         start: new Date(moment(eachEvent.start.date).format())

@@ -9,34 +9,29 @@ export default {
       type: 'string',
       primary: true
     },
-
-    // recurrence id from caldav it is equal to the dtstart
     recurringTypeId: {
       type: 'string'
     },
     originalId: {
       type: 'string'
     },
+    freq: {
+      type: 'string'
+    },
     interval: {
       type: 'number'
     },
-    frequency: {
+    until: {
       type: 'string'
     },
-    maxNumberOfOccurences: {
-      type: 'number'
+    exDates: {
+      type: 'array'
     },
-    dayOfWeek: {
-      type: 'number'
+    recurrenceIds: {
+      type: 'array'
     },
-    weekOfMonth: {
-      type: 'number'
-    },
-    dayOfMonth: {
-      type: 'number'
-    },
-    monthOfYear: {
-      type: 'number'
+    modifiedThenDeleted: {
+      type: 'boolean'
     }
   },
   required: ['recurringTypeId']

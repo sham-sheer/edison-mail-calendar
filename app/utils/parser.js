@@ -10,10 +10,14 @@ const parseRecurrenceEvents = calEvents => {
     if (isRecurring) {
       recurringEvents.push({
         id: uniqid(),
-        originalId: calEvent.data.id,
-        frequency: calEvent.data.metaData.freq,
-        interval: calEvent.data.metaData.interval,
-        recurringTypeId: calEvent.data.start.dateTime
+        originalId: calEvent.data.originalId,
+        freq: calEvent.rruleJSON.freq,
+        interval: calEvent.recurringInterval,
+        recurringTypeId: calEvent.data.start.dateTime,
+        until: calEvent.rruleJSON.until,
+        exDates: calEvent.exdates,
+        recurrenceIds: calEvent.recurrenceIds,
+        modifiedThenDeleted: calEvent.mtd
       });
     }
   });
@@ -72,74 +76,132 @@ const parseEvents = (events, calendarId, creator) => {
     const jcalData = ICAL.parse(calevent.calendarData);
     const ics = calevent.data.href;
     const { etag } = calevent;
+    let mtd = false;
     if (jcalData.length > 0) {
       const comp = new ICAL.Component(jcalData);
       const vevents = comp.getAllSubcomponents('vevent');
       const modifiedOccurences = [];
+      const recurrenceIds = [];
+      // vevents.forEach((evt, index) => {
+      //   // Contains all modified occurences
+      //   if (evt.getFirstPropertyValue('recurrence-id')) {
+      //     modifiedOccurences.push({
+      //       'recurrence-id': evt.getFirstPropertyValue('recurrence-id'),
+      //       key: index
+      //     });
+      //   }
+      // });
       vevents.forEach((evt, index) => {
-        // If an event has a reccurence-id, it is a modified occurrence
+        // Contains all modified occurences
         if (evt.getFirstPropertyValue('recurrence-id')) {
-          modifiedOccurences.push({
-            'recurrence-id': evt.getFirstPropertyValue('recurrence-id'),
-            key: index
-          });
+          recurrenceIds.push(evt.getFirstProperty('recurrence-id').jCal);
         }
       });
-
       const vevent = comp.getFirstSubcomponent('vevent');
       const ICALEvent = new ICAL.Event(vevent);
       let attendees = [];
-      const attendeeProperties = vevent.getAllProperties('attendee');
+      let recurringInterval = '';
+      let rruleJSON = {};
+      const exdates = [];
 
-      if (attendeeProperties.length > 0) {
-        attendees = parseAttendees(attendeeProperties);
+      if (vevent.hasProperty('exdate')) {
+        const exdateProps = vevent.getAllProperties('exdate');
+        exdateProps.forEach(exdate => exdates.push(exdate.jCal));
+      }
+
+      if (vevent.hasProperty('attendee')) {
+        attendees = parseAttendees(vevent.getAllProperties('attendee'));
       }
 
       if (ICALEvent.isRecurring()) {
-        const recurringEvents = expandRecurringEvent(
-          vevents,
-          vevent,
-          ICALEvent,
-          modifiedOccurences,
-          ics,
-          attendees,
-          etag
-        );
+        // const recurringEvents = expandRecurringEvent(
+        //   vevents,
+        //   vevent,
+        //   ICALEvent,
+        //   modifiedOccurences,
+        //   ics,
+        //   attendees,
+        //   etag
+        // );
+        const rrule = vevent.getFirstPropertyValue('rrule');
+        recurringInterval = rrule.interval;
+        rruleJSON = rrule.toJSON();
       }
-      const eventParsed = parseICALEvent(
-        vevent,
-        attendees,
-        ICALEvent.isRecurring(),
-        calendarId,
-        creator
-      );
-      parsedEvents.push({
-        ics,
-        etag,
-        data: eventParsed
-      });
+
+      if (recurrenceIds.length === 0) {
+        const eventParsed = parseICALEvent(
+          vevent,
+          attendees,
+          ICALEvent.isRecurring(),
+          calendarId,
+          creator,
+          mtd
+        );
+        parsedEvents.push({
+          ics,
+          etag,
+          rruleJSON,
+          recurringInterval,
+          exdates,
+          recurrenceIds,
+          data: eventParsed
+        });
+      } else {
+        vevents.forEach(recurvevent => {
+          mtd = isModifiedThenDeleted(recurvevent, exdates);
+          const eventParsed = parseICALEvent(
+            recurvevent,
+            attendees,
+            ICALEvent.isRecurring(),
+            calendarId,
+            creator,
+            mtd
+          );
+          parsedEvents.push({
+            ics,
+            etag,
+            rruleJSON,
+            recurringInterval,
+            exdates,
+            recurrenceIds,
+            data: eventParsed
+          });
+        });
+      }
     }
   });
   return parsedEvents;
 };
 
-const parseICALEvent = (vevent, attendee, isRecurring, calendarId, creator) => {
+const isModifiedThenDeleted = (recurEvent, exdates) => {
+  let isMtd = false;
+  if (exdates === 0 || !recurEvent.hasProperty('recurrence-id')) {
+    return isMtd;
+  }
+  const recurId = recurEvent.getFirstProperty('recurrence-id').jCal[3];
+  exdates.forEach(exdate => {
+    if (exdate[3] === recurId) {
+      isMtd = true;
+      return isMtd;
+    }
+  });
+  return isMtd;
+};
+
+const parseICALEvent = (
+  vevent,
+  attendee,
+  isRecurring,
+  calendarId,
+  creator,
+  mtd
+) => {
   const dtstart = vevent.getFirstPropertyValue('dtstart');
   const dtend = vevent.getFirstPropertyValue('dtend');
   const duration = getNormalizedDuration(dtstart, dtend);
-  const metaData = {};
-
-  if (isRecurring) {
-    Object.assign(metaData, {
-      freq: vevent.getFirstPropertyValue('rrule').freq
-    });
-    Object.assign(metaData, {
-      interval: vevent.getFirstPropertyValue('rrule').interval
-    });
-  }
 
   return {
-    id: vevent.getFirstPropertyValue('uid'),
+    id: uniqid(),
     start: {
       dateTime: new Date(dtstart).toISOString(),
       timezone: 'timezone'
@@ -171,12 +233,11 @@ const parseICALEvent = (vevent, attendee, isRecurring, calendarId, creator) => {
       dateTime: new Date(dtstart).toISOString(),
       timezone: 'timezone'
     },
-    iCalUID: vevent.getFirstPropertyValue('uid'),
     attendee,
     calendarId,
     providerType: 'caldav',
-    metaData,
-    isRecurring
+    isRecurring,
+    isModifiedThenDeleted: mtd
   };
 };
 

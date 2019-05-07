@@ -308,6 +308,7 @@
     "redux-observable": "^1.0.0",
     "redux-thunk": "^2.3.0",
     "reselect": "^4.0.0",
+    "rrule": "^2.6.0",
     "rxdb": "^8.0.4",
     "rxjs": "^6.4.0",
     "rxjs-compat": "^6.3.3",

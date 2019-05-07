@@ -12,23 +12,7 @@ import * as Credentials from './utils/Credentials';
 import * as CalDavActionCreators from './actions/caldav';
 import ServerUrls from './utils/serverUrls';
 
-const dav = require('dav');
-
-const xhrObject = new dav.transport.Basic(
-  new dav.Credentials({
-    username: Credentials.ICLOUD_USERNAME,
-    password: Credentials.ICLOUD_PASSWORD
-  })
-);
 const store = configureStore();
-
-store.dispatch(
-  CalDavActionCreators.beginCreateAccount({
-    server: ServerUrls.ICLOUD,
-    xhr: xhrObject,
-    loadObjects: true
-  })
-);
 
 render(
   <AppContainer>

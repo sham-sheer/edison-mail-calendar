@@ -414,23 +414,26 @@ export default class View extends React.Component {
   };
 
   /* Render functions */
-  renderCalendar = props => (
-    <DragAndDropCalendar
-      selectable
-      localizer={localizer}
-      events={props.events}
-      views={{
-        month: true,
-        day: true
-      }}
-      onEventDrop={this.moveEventList}
-      onEventResize={this.resizeEvent}
-      onSelectSlot={this.handleSelectDate}
-      onSelectEvent={event => this.handleEventClick(event)}
-      popup
-      resizable
-    />
-  );
+  renderCalendar = props => {
+    const { events } = props;
+    return (
+      <DragAndDropCalendar
+        selectable
+        localizer={localizer}
+        events={events}
+        views={{
+          month: true,
+          day: true
+        }}
+        onEventDrop={this.moveEventList}
+        onEventResize={this.resizeEvent}
+        onSelectSlot={this.handleSelectDate}
+        onSelectEvent={event => this.handleEventClick(event)}
+        popup
+        resizable
+      />
+    );
+  };
 
   renderEventPopup = state => (
     <Modal
@@ -571,7 +574,23 @@ export default class View extends React.Component {
           onClick={() => props.clearAllEvents()}
         >
           <i className="material-icons left">close</i>Clear all Events
-        </a>{' '}
+        </a>
+        <a
+          role="button"
+          tabIndex="0"
+          className="waves-effect waves-light btn"
+          onClick={() => props.beginRetrieveCalDavEvents()}
+        >
+          <i className="material-icons left">cloud_download</i>Populate Caldav
+        </a>
+        <a
+          role="button"
+          tabIndex="0"
+          className="waves-effect waves-light btn"
+          onClick={() => props.resetCaldavAccount()}
+        >
+          <i className="material-icons left">cloud_download</i>Get Caldav
+        </a>
       </div>
     );
   };

@@ -22,6 +22,17 @@ export const BEGIN_SYNC_CALDAV_ACCOUNT = 'BEGIN_SYNC_CALDAV_ACCOUNT';
 export const SUCCESS_SYNC_CALDAV_ACCOUNT = 'SUCCESS_SYNC_CALDAV_ACCOUNT';
 export const FAIL_SYNC_CALDAV_ACCOUNT = 'FAIL_SYNC_CALDAV_ACCOUNT';
 
+export const BEGIN_RETRIEVE_CALDAV_EVENTS = 'BEGIN_RETRIEVE_CALDAV_EVENTS';
+export const RESET_CALDAV_ACCOUNT = 'RESET_CALDAV_ACCOUNT';
+
+export const resetCaldavAccount = () => ({
+  type: RESET_CALDAV_ACCOUNT
+});
+
+export const beginRetrieveCaldavEvents = () => ({
+  type: BEGIN_RETRIEVE_CALDAV_EVENTS
+});
+
 export const beginCreateAccount = payload => ({
   type: BEGIN_CREATE_ACCOUNT,
   payload

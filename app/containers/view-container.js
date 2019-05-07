@@ -19,6 +19,10 @@ import {
   beginDeleteEvent,
   clearAllEvents
 } from '../actions/events';
+import {
+  beginRetrieveCaldavEvents,
+  resetCaldavAccount
+} from '../actions/caldav';
 import getFilteredEvents from '../selectors/ui-selector';
 
 const mapStateToProps = state => ({
@@ -50,7 +54,10 @@ const mapDispatchToProps = dispatch => ({
   onStartGetExchangeAuth: user => dispatch(successExchangeAuth(user)),
 
   onExpiredOutlook: user => dispatch(expiredOutlookAuth(user)),
-  onExpiredGoogle: user => dispatch(expiredGoogleAuth(user))
+  onExpiredGoogle: user => dispatch(expiredGoogleAuth(user)),
+
+  beginRetrieveCalDavEvents: () => dispatch(beginRetrieveCaldavEvents()),
+  resetCaldavAccount: () => dispatch(resetCaldavAccount())
 });
 
 export default connect(

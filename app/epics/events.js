@@ -56,9 +56,15 @@ import {
   EDIT_EVENT_BEGIN,
   getEventsFailure,
   GET_EXCHANGE_EVENTS_BEGIN,
-  clearAllEventsSuccess
+  clearAllEventsSuccess,
+  CLEAR_ALL_EVENTS_SUCCESS
 } from '../actions/events';
 import getDb from '../db';
+import * as Credentials from '../utils/Credentials';
+import * as CalDavActionCreators from '../actions/caldav';
+import ServerUrls from '../utils/serverUrls';
+
+const dav = require('dav');
 
 export const beginGetEventsEpics = action$ =>
   action$.pipe(
@@ -354,8 +360,26 @@ export const clearAllEventsEpics = action$ =>
     ofType(CLEAR_ALL_EVENTS),
     map(() => {
       localStorage.clear();
-      RxDB.removeDatabase('eventsdb', 'idb');
+      RxDB.removeDatabase('eventsdb', 'websql');
       return clearAllEventsSuccess();
+    })
+  );
+
+export const createCaldavAccountEpics = action$ =>
+  action$.pipe(
+    ofType(CalDavActionCreators.RESET_CALDAV_ACCOUNT),
+    map(() => {
+      const xhrObject = new dav.transport.Basic(
+        new dav.Credentials({
+          username: Credentials.ICLOUD_USERNAME,
+          password: Credentials.ICLOUD_PASSWORD
+        })
+      );
+      return CalDavActionCreators.beginCreateAccount({
+        server: ServerUrls.ICLOUD,
+        xhr: xhrObject,
+        loadObjects: true
+      });
     })
   );
 // ------------------------------------ GENERAL ------------------------------------ //
