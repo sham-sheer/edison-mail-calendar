@@ -208,10 +208,7 @@ export const retrieveEventsEpic = action$ =>
                 hide: singleEvent.hide
               }))
             ),
-            map(results => {
-              console.log(results);
-              return updateStoredEvents(results, action.payload.user);
-            })
+            map(results => updateStoredEvents(results, action.payload.user))
 
             // map(events =>
             //   events.filter(
@@ -245,12 +242,16 @@ export const retrieveEventsEpic = action$ =>
 export const storeEventsEpic = action$ =>
   action$.pipe(
     ofType(BEGIN_STORE_EVENTS),
-    mergeMap(action =>
-      from(storeEvents(action.payload)).pipe(
-        map(results => successStoringEvents(results)),
+    mergeMap(action => {
+      console.log('here?');
+      return from(storeEvents(action.payload)).pipe(
+        map(results => {
+          console.log(results);
+          return successStoringEvents(results);
+        }),
         catchError(error => failStoringEvents(error))
-      )
-    )
+      );
+    })
   );
 
 export const beginStoreEventsEpic = action$ =>
@@ -348,7 +349,9 @@ const storeEvents = async payload => {
     // Adding filtered event coz if I added dbEvent, it will result it non compatability with outlook objects.
     addedEvents.push(filteredEvent);
   }
-  await Promise.all(dbUpsertPromises);
+
+  console.log(addedEvents);
+  Promise.all(dbUpsertPromises);
   return addedEvents;
 };
 

@@ -467,9 +467,8 @@ export const pollingEventsEpics = action$ => {
 };
 
 const syncEvents = async action => {
-  console.log(action);
   const { user } = action.payload;
-  // console.log(user);
+
   switch (user.providerType) {
     case Providers.GOOGLE:
       break;
@@ -528,7 +527,6 @@ const syncEvents = async action => {
           }
         }
         await Promise.all(listOfPriomises);
-        // console.log(updatedEvents);
         return updatedEvents;
       } catch (error) {
         // console.log(error);

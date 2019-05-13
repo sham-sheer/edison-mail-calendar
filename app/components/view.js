@@ -70,9 +70,7 @@ export default class View extends React.Component {
       currentEventStartDateTime: '',
       currentEventEndDateTime: '',
       exchangeEmail: 'e0176993@u.nus.edu',
-      exchangePwd: 'Ggrfw4406@nus41',
-      tempid:
-        'AAMkAGZlZDEyNmMxLTMyNDgtNDMzZi05ZmZhLTU5ODk3ZjA5ZjQyOABGAAAAAAA/XPNVbhVJSbREEYK0xJ3FBwCK0Ut7mQOxT5W1Wd82ZSuqAAAAAAENAACK0Ut7mQOxT5W1Wd82ZSuqAAG7pSLSAAA='
+      exchangePwd: 'Ggrfw4406@nus41'
     };
     let incrementalSync;
 
@@ -86,21 +84,6 @@ export default class View extends React.Component {
   }
 
   async componentDidMount() {
-    // const xhrObject = new dav.transport.Basic(
-    //   new dav.Credentials({
-    //     username: FASTMAIL_USERNAME,
-    //     password: FASTMAIL_PASSWORD
-    //   })
-    // );
-
-    // return dav
-    //   .createAccount({
-    //     server: 'https://caldav.fastmail.com/dav/',
-    //     xhr: xhrObject,
-    //     loadObjects: true
-    //   })
-    //   .then(console.log);
-
     const exch = new ExchangeService();
     exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
 
@@ -237,32 +220,11 @@ export default class View extends React.Component {
 
     const { props } = this;
     const db = await getDb();
-    // await db.pendingactions.upsert({
-    //   eventId:
-    //     'AAMkAGZlZDEyNmMxLTMyNDgtNDMzZi05ZmZhLTU5ODk3ZjA5ZjQyOABGAAAAAAA/XPNVbhVJSbREEYK0xJ3FBwCK0Ut7mQOxT5W1Wd82ZSuqAAAAAAENAACK0Ut7mQOxT5W1Wd82ZSuqAAGuImrLAAA=',
-    //   status: 'pending',
-    //   type: 'delete'
-    //   // lastUpdatedTime: '2019-04-17T03:15:11-07:00'
-    // });
 
-    // await db.pendingactions.upsert({
-    //   eventId:
-    //     'AAMkAGZlZDEyNmMxLTMyNDgtNDMzZi05ZmZhLTU5ODk3ZjA5ZjQyOABGAAAAAAA/XPNVbhVJSbREEYK0xJ3FBwCK0Ut7mQOxT5W1Wd82ZSuqAAAAAAENAACK0Ut7mQOxT5W1Wd82ZSuqAAHEHSAcAAA=',
-    //   status: 'pending',
-    //   type: 'update'
-    //   // lastUpdatedTime: '2019-04-23T18:07:24-07:00'
-    // });
-
-    const eventsz = await db.events.find().exec();
-    console.log(eventsz);
-
-    const actions = await db.pendingactions.find().exec();
-    console.log(actions);
-
-    // const events = await db.events.find().exec();
-    // console.log(events);
-
-    console.log(DateTime.Now, DateTime.UtcNow);
+    // const eventsz = await db.events.find().exec();
+    // console.log(eventsz);
+    // const actions = await db.pendingactions.find().exec();
+    // console.log(actions);
 
     db.persons
       .find()
@@ -417,25 +379,6 @@ export default class View extends React.Component {
     });
   };
 
-  test = async e => {
-    e.preventDefault();
-    const { state } = this;
-
-    console.log(state.tempid);
-
-    const exch = new ExchangeService();
-    exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
-    exch.Credentials = new ExchangeCredentials(
-      'e0176993@u.nus.edu',
-      'Ggrfw4406@nus41'
-    );
-
-    const item = await Item.Bind(exch, new ItemId(state.tempid));
-
-    console.log(item);
-  };
-  // Exchange login handling here first, will move it in the future!!
-
   // This filter user is used when the outlook first creates the object.
   // It takes the outlook user object, and map it to the common schema defined in db/person.js
   filterUserOnStart = (rxDoc, providerType) => ({
@@ -575,16 +518,6 @@ export default class View extends React.Component {
         >
           <i className="material-icons left">close</i>End Pending Actions
         </a>{' '}
-        <form onSubmit={this.test}>
-          <input
-            type="text"
-            name="tempid"
-            value={state.tempid}
-            onChange={this.test}
-            placeholder="id"
-          />
-          <input type="submit" value="Submit" />
-        </form>
         <form onSubmit={this.handleSubmit}>
           <input
             type="text"

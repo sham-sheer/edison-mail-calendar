@@ -200,7 +200,6 @@ export const authSuccessMiddleware = store => next => action => {
       payload: { providerType: Providers.GOOGLE, user: action.payload.user }
     });
   } */
-  console.log(action);
   if (action.type === AuthActionTypes.FAIL_GOOGLE_AUTH) {
     next({
       type: AuthActionTypes.RETRY_GOOGLE_AUTH

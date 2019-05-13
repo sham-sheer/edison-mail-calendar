@@ -253,13 +253,10 @@ export const filterIntoSchema = (dbEvent, type, owner) => {
         {
           organizer: {
             value: 'Organizer',
-            defaultValue: { email: '', displayName: '' },
+            defaultValue: '',
             type: 'neededFunc',
             func() {
-              return {
-                email: dbEvent.Organizer.address,
-                displayName: dbEvent.Organizer.name
-              };
+              return dbEvent.Organizer.address;
             }
           }
         }

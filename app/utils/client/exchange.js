@@ -23,7 +23,6 @@ import {
 } from 'ews-javascript-api';
 import moment from 'moment';
 import * as ProviderTypes from '../constants';
-
 import getDb from '../../db';
 import {
   deleteEventSuccess,
@@ -68,12 +67,10 @@ export const asyncExchangeRequest = async (username, password, url) => {
         }
       )
     );
-    // console.log(value);
     prev = prev.add(23, 'month');
   }
   await Promise.all(results);
   console.log('Finished exchange sync');
-  // console.log(exchangeEvents);
 
   const arrayOfIdAndChangekey = [];
   const arrayOfIds = [];
@@ -172,33 +169,11 @@ export const updateEvent = async (singleAppointment, user, callback) => {
             )
           );
           const data = await db.events.find().exec();
-          console.log(
-            data.filter(
-              obj =>
-                obj.id ===
-                ProviderTypes.filterIntoSchema(
-                  updatedItem,
-                  ProviderTypes.EXCHANGE,
-                  user.email
-                ).id
-            )
-          );
-          console.log(
-            'after: ',
-            updatedItem,
-            ProviderTypes.filterIntoSchema(
-              updatedItem,
-              ProviderTypes.EXCHANGE,
-              user.email
-            ),
-            singleAppointment
-          );
-          console.log(DateTime.Now, DateTime.UtcNow);
           callback();
           return editEventSuccess(updatedItem);
         },
         error => {
-          console.log('error:', error);
+          // console.log('error:', error);
           throw error;
         }
       );

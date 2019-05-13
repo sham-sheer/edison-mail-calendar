@@ -9,7 +9,6 @@ const getFilteredEvents = createSelector(
   [getEvents],
   normalizedData => {
     const data = Object.values(normalizedData);
-    console.log(data);
     const formatedEvents = data
       .filter(obj => obj.hide === false)
       .map(eachEvent => {
