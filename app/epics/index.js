@@ -11,7 +11,9 @@ import {
   beginGetOutlookEventsEpics,
   beginGetExchangeEventsEpics,
   beginPostEventEpics,
-  clearAllEventsEpics
+  clearAllEventsEpics,
+  pollingEventsEpics,
+  pendingActionsEpics
 } from './events';
 import storeEventPersonEpic from './db/eventPersons';
 import {
@@ -33,7 +35,9 @@ const rootEpic = combineEpics(
   clearAllEventsEpics,
   storeGoogleAuthEpic,
   storeOutLookAuthEpic,
-  storeExchangeAuthEpic
+  storeExchangeAuthEpic,
+  pollingEventsEpics,
+  pendingActionsEpics
 );
 
 export default rootEpic;

@@ -13,7 +13,10 @@ export const storeGoogleAuthEpic = action$ =>
     mergeMap(action =>
       from(storeUser(action.payload.user)).pipe(
         mergeMap(resp =>
-          of(successStoreAuth(), retrieveStoreEvents(Providers.GOOGLE))
+          of(
+            successStoreAuth(),
+            retrieveStoreEvents(Providers.GOOGLE, action.payload.user)
+          )
         ),
         catchError(error => {
           of(console.log(error));
@@ -28,7 +31,10 @@ export const storeOutLookAuthEpic = action$ =>
     mergeMap(action =>
       from(storeUser(action.payload.user)).pipe(
         mergeMap(resp =>
-          of(successStoreAuth(), retrieveStoreEvents(Providers.OUTLOOK))
+          of(
+            successStoreAuth(),
+            retrieveStoreEvents(Providers.OUTLOOK, action.payload.user)
+          )
         ),
         catchError(error => {
           of(console.log(error));
@@ -43,7 +49,10 @@ export const storeExchangeAuthEpic = action$ =>
     mergeMap(action =>
       from(storeUser(action.payload.user)).pipe(
         mergeMap(resp =>
-          of(successStoreAuth(), retrieveStoreEvents(Providers.EXCHANGE))
+          of(
+            successStoreAuth(),
+            retrieveStoreEvents(Providers.EXCHANGE, action.payload.user)
+          )
         ),
         catchError(error => {
           of(console.log(error));

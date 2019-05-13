@@ -1,7 +1,17 @@
-// import { duplicateAction } from '../actions/db/events';
-import { map, mergeMap, catchError } from 'rxjs/operators';
+import {
+  map,
+  mergeMap,
+  catchError,
+  takeUntil,
+  distinctUntilChanged,
+  combineLatest,
+  startWith,
+  switchMap,
+  delay,
+  concatMap
+} from 'rxjs/operators';
 import { ofType } from 'redux-observable';
-import { from, iif, of } from 'rxjs';
+import { from, iif, of, timer, interval } from 'rxjs';
 import { normalize, schema } from 'normalizr';
 import { Client } from '@microsoft/microsoft-graph-client';
 import * as RxDB from 'rxdb';
@@ -13,12 +23,20 @@ import {
   MessageBody,
   DateTime,
   WellKnownFolderName,
-  SendInvitationsMode
-  // Item,
-  // PropertySet,
-  // ItemSchema
+  SendInvitationsMode,
+  Item,
+  PropertySet,
+  ItemSchema
 } from 'ews-javascript-api';
 import moment from 'moment';
+import _ from 'lodash';
+import { fromPromise } from 'rxjs/internal-compatibility';
+import {
+  duplicateAction,
+  syncStoredEvents,
+  UPDATE_STORED_EVENTS,
+  retrieveStoreEvents
+} from '../actions/db/events';
 import {
   loadClient,
   loadFullCalendar,
@@ -38,25 +56,33 @@ import {
 } from '../utils/client/outlook';
 
 import {
-  getAllEvents
+  getAllEvents,
+  asyncExchangeRequest,
+  findSingleEventById,
+  updateEvent,
+  asyncDeleteSingleEventById,
+  exchangeDeleteEvent
   // createEvent
 } from '../utils/client/exchange';
 
 import {
   GET_EVENTS_BEGIN,
+  EDIT_EVENT_BEGIN,
   POST_EVENT_BEGIN,
+  CLEAR_ALL_EVENTS,
+  GET_OUTLOOK_EVENTS_BEGIN,
+  GET_EXCHANGE_EVENTS_BEGIN,
+  BEGIN_POLLING_EVENTS,
+  END_POLLING_EVENTS,
+  BEGIN_PENDING_ACTIONS,
   apiFailure,
   getEventsSuccess,
   postEventSuccess,
   editEventSuccess,
-  // deleteEventSuccess,
-  // DELETE_EVENT_BEGIN,
-  GET_OUTLOOK_EVENTS_BEGIN,
-  CLEAR_ALL_EVENTS,
-  EDIT_EVENT_BEGIN,
   getEventsFailure,
-  GET_EXCHANGE_EVENTS_BEGIN,
-  clearAllEventsSuccess
+  clearAllEventsSuccess,
+  endPollingEvents,
+  END_PENDING_ACTIONS
 } from '../actions/events';
 import getDb from '../db';
 
@@ -212,16 +238,22 @@ const postEventsExchange = payload =>
       )
       .then(
         async () => {
-          // var item = await Item.Bind(exch, newEvent.Id, new PropertySet(ItemSchema.Subject));
+          const item = await Item.Bind(
+            exch,
+            newEvent.Id
+            // new PropertySet(ItemSchema.Subject)
+          );
+          console.log('New Exchange Event Re-Get: ', item);
+
           const db = await getDb();
           await db.events.upsert(
             Providers.filterIntoSchema(
-              newEvent,
+              item,
               Providers.EXCHANGE,
               payload.auth.email
             )
           );
-          resolve(newEvent);
+          resolve(item);
         },
         error => reject(error)
       )
@@ -358,4 +390,365 @@ export const clearAllEventsEpics = action$ =>
       return clearAllEventsSuccess();
     })
   );
+
+// export const testingEpics = action$ =>
+//   action$.pipe(
+//     ofType(CLEAR_ALL_EVENTS),
+//     mergeMap(data =>
+//       from(
+//         new Promise((resolve, reject) => {
+//           resolve('hello world');
+//         })
+//       ).pipe(
+//         mergeMap(() =>
+//           of(
+//             { type: 'ADD_CATEGORY_SUCCESS' },
+//             { type: 'GET_CATEGORIES_REQUEST' }
+//           )
+//         )
+//       )
+//     )
+//   );
 // ------------------------------------ GENERAL ------------------------------------ //
+
+// ------------------------------------ POLLING ------------------------------------ //
+export const pollingEventsEpics = action$ => {
+  const stopPolling$ = action$.pipe(ofType(END_POLLING_EVENTS));
+  return action$.pipe(
+    ofType(BEGIN_POLLING_EVENTS, UPDATE_STORED_EVENTS),
+    // ofType(BEGIN_POLLING_EVENTS),
+    switchMap(action =>
+      interval(10 * 1000).pipe(
+        takeUntil(stopPolling$),
+        switchMap(() => from(syncEvents(action))),
+        map(events =>
+          events.map(singleEvent => ({
+            id: singleEvent.id,
+            end: singleEvent.end,
+            start: singleEvent.start,
+            summary: singleEvent.summary,
+            organizer: singleEvent.organizer,
+            recurrence: singleEvent.recurrence,
+            iCalUID: singleEvent.iCalUID,
+            attendees: singleEvent.attendees,
+            originalId: singleEvent.originalId,
+            owner: singleEvent.owner,
+            hide: singleEvent.hide
+          }))
+        ),
+        map(results => syncStoredEvents(results))
+      )
+    )
+  );
+};
+
+const syncEvents = async action => {
+  console.log(action);
+  const { user } = action.payload;
+  // console.log(user);
+  switch (user.providerType) {
+    case Providers.GOOGLE:
+      break;
+    case Providers.OUTLOOK:
+      break;
+    case Providers.EXCHANGE:
+      try {
+        const appts = await asyncExchangeRequest(
+          user.email,
+          user.password,
+          'https://outlook.office365.com/Ews/Exchange.asmx'
+        );
+        const db = await getDb();
+        const dbEvents = await db.events.find().exec();
+        const updatedEvents = [];
+        const listOfPriomises = [];
+
+        for (const appt of appts) {
+          if (appt.IsRecurring) {
+            continue;
+          }
+
+          const dbObj = dbEvents.filter(
+            dbEvent => dbEvent.originalId === appt.Id.UniqueId
+          );
+
+          if (dbObj.length === 0) {
+            // New object from server, add and move on to next one.
+            // console.log('Found new object!!', appt);
+            const filteredEvent = Providers.filterIntoSchema(
+              appt,
+              Providers.EXCHANGE,
+              user.email
+            );
+
+            updatedEvents.push(filteredEvent);
+            listOfPriomises.push(db.events.upsert(filteredEvent));
+          } else {
+            // Sync old objects and compare in case.
+            const dbEvent = dbObj[0];
+            const lastUpdatedTime = moment(dbEvent.updated);
+
+            if (
+              appt.Id.UniqueId === dbEvent.originalId &&
+              appt.LastModifiedTime.getMomentDate() > lastUpdatedTime
+            ) {
+              const filteredEvent = Providers.filterIntoSchema(
+                appt,
+                Providers.EXCHANGE,
+                user.email
+              );
+
+              updatedEvents.push(filteredEvent);
+              listOfPriomises.push(db.events.upsert(filteredEvent));
+            }
+          }
+        }
+        await Promise.all(listOfPriomises);
+        // console.log(updatedEvents);
+        return updatedEvents;
+      } catch (error) {
+        // console.log(error);
+        // Return empty array, let next loop handle syncing.
+        return [];
+      }
+    default:
+      break;
+  }
+};
+// ------------------------------------ POLLING ------------------------------------ //
+
+// ------------------------------------ PENDING ACTIONS ------------------------------------ //
+export const pendingActionsEpics = action$ => {
+  // Stop upon a end pending action trigger, for debugging/stopping if needed
+  const stopPolling$ = action$.pipe(ofType(END_PENDING_ACTIONS));
+  return action$.pipe(
+    // On begin pending actions
+    ofType(BEGIN_PENDING_ACTIONS),
+    switchMap(action =>
+      // At a 5 second interval
+      interval(5 * 1000).pipe(
+        // Stop when epics see a end pending action
+        takeUntil(stopPolling$),
+        switchMap(() =>
+          // Get the db
+          from(getDb()).pipe(
+            mergeMap(db =>
+              // Get all the pending actions
+              from(db.pendingactions.find().exec()).pipe(
+                // what happens if action is still running but no internet?
+                // delay(9.9 * 1000),
+                // actions is an array from the db
+                // switchmap at top is reason for it, handle for future. lol
+                mergeMap(actions =>
+                  from(handlePendingActions(action.payload, actions, db)).pipe(
+                    mergeMap(result => {
+                      console.log(result);
+                      return of(...result);
+                    })
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+};
+
+const reflect = p =>
+  p.then(v => ({ v, status: 'fulfilled' }), e => ({ e, status: 'rejected' }));
+
+const handlePendingActions = async (users, actions, db) => {
+  const docs = await db.events.find().exec();
+  console.log(users, actions);
+  console.log(docs);
+
+  const promisesArr = actions.map(async action => {
+    const rxDbObj = docs.filter(obj => obj.originalId === action.eventId)[0];
+    // console.log(rxDbObj.providerType, users[rxDbObj.providerType]);
+
+    const user = users[rxDbObj.providerType].filter(
+      indivAcc => indivAcc.owner === rxDbObj.email
+    )[0];
+
+    let serverObj;
+
+    try {
+      switch (rxDbObj.providerType) {
+        case Providers.GOOGLE:
+          break;
+        case Providers.OUTLOOK:
+          break;
+        case Providers.EXCHANGE:
+          serverObj = await findSingleEventById(
+            user.email,
+            user.password,
+            'https://outlook.office365.com/Ews/Exchange.asmx',
+            rxDbObj.originalId
+          );
+          break;
+        default:
+          return apiFailure('Unhandled provider for Pending actions');
+      }
+
+      // console.log(serverObj);
+      const resultingAction = await handleMergeEvents(
+        rxDbObj,
+        serverObj,
+        db,
+        action.type,
+        user
+      );
+      // console.log(resultingAction);
+      return { result: resultingAction, user };
+    } catch (error) {
+      throw error;
+    }
+  });
+
+  // The logic here, is to wait for all promises to complete, NO MATTER SUCCESS OR FAILURE
+  // Reason being is we want it tt requeue the failed ones, but still not block the UI.
+  // We use reflect for this, not sure why yet, link: https://stackoverflow.com/questions/31424561/wait-until-all-es6-promises-complete-even-rejected-promises
+  // Based on each result, if ANY of them is a success, we start retrieving stored events
+  // and assume that our queue is still valid, and let it re-run on its own.
+  // However, I need to retrieve stored events for the providers that are fulfilled, and not those who are not.
+  const result = await Promise.all(promisesArr.map(reflect));
+  const appendedUsers = [];
+  // console.log(result);
+  const noDuplicateUsers = result.reduce((a, b) => {
+    // console.log(a, b);
+    if (
+      b.status === 'fulfilled' && // ensure that it is a success
+      !a.some(singleUser => _.isEqual(singleUser.v.user, b.v.user)) && // ensure that the same user is not inside
+      !(
+        appendedUsers.filter(appendedUser => _.isEqual(appendedUser, b.v.user))
+          .length > 1
+      ) // ensure that the return array does not contain that user
+    ) {
+      a.push(b);
+      appendedUsers.push(b.v.user);
+    }
+    return a;
+  }, []);
+
+  const resultingAction = noDuplicateUsers.map(indivAcc =>
+    retrieveStoreEvents(indivAcc.v.user.providerType, indivAcc.v.user)
+  );
+
+  // // Unsure if needed due to if all fail to send
+  // if (resultingAction.length === 0) {
+  //   return [];
+  // }
+  return resultingAction;
+};
+
+const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
+  console.log(localObj, serverObj, localObj.local);
+  const filteredServerObj = Providers.filterIntoSchema(
+    serverObj,
+    localObj.providerType,
+    localObj.owner
+  );
+  const localUpdatedTime = moment(localObj.updated);
+  const serverUpdatedTime = moment(filteredServerObj.updated);
+
+  const dateIsAfter = localUpdatedTime.isAfter(serverUpdatedTime);
+  const dateIsBefore = localUpdatedTime.isBefore(serverUpdatedTime);
+
+  let result;
+
+  if (localObj.local) {
+    const dateIsSame = localUpdatedTime.isSame(serverUpdatedTime);
+    console.log(`Date is Same: ${dateIsSame}`);
+
+    if (dateIsSame) {
+      // Take local
+      switch (localObj.providerType) {
+        case Providers.GOOGLE:
+          break;
+        case Providers.OUTLOOK:
+          break;
+        case Providers.EXCHANGE:
+          console.log('Running exchange: ', type);
+          switch (type) {
+            case 'update':
+              console.log('Update type, Call update on exchange');
+              // console.log(localObj, serverObj, db, type);
+
+              // TO-DO, add more update fields
+              serverObj.Subject = localObj.summary;
+              serverObj.Location = localObj.location;
+
+              result = await updateEvent(serverObj, user, () => {
+                console.log('conflict solved exchange');
+              });
+
+              /*
+                Goal is to check for every result, if fail or success
+
+                If success, I can return the result actually
+                If fail, I want to retry. And here, I can retry on the back as it is part of my stream.
+
+                Due to the timer loop, I can just ignore and retry by pushing it back into the db. Cool
+
+                One point to note for future is how to handle increment of timer freq for each event upon
+                a failure of uploading. Need to think how to handle this in the future!!
+
+                How about upon a success, I then remove it. If fail, I ignore removing it? Smooth.
+                Don't need to keep upserting
+              */
+              if (result.type === 'EDIT_EVENT_SUCCESS') {
+                const query = db.pendingactions
+                  .find()
+                  .where('eventId')
+                  .eq(filteredServerObj.originalId);
+                await query.remove();
+              }
+              return result;
+            case 'delete':
+              console.log('Delete type, Deleting appt on exchange now');
+              // console.log(localObj, serverObj, db, type);
+
+              result = await exchangeDeleteEvent(serverObj, user, () => {
+                console.log('deleted exchange event');
+              });
+
+              if (result.type === 'DELETE_EVENT_SUCCESS') {
+                const query = db.pendingactions
+                  .find()
+                  .where('eventId')
+                  .eq(filteredServerObj.originalId);
+                await query.remove();
+              }
+              return result;
+            default:
+              console.log('(Exchange, Merge) Unhandled CRUD type');
+              break;
+          }
+          break;
+        default:
+          console.log('(Handle Merge Events) Provider not accounted for');
+          break;
+      }
+    } else if (dateIsBefore) {
+      console.log(
+        'Handle merging here, but for now, discard all pending actions and keep server'
+      );
+
+      // Keep server
+      await db.events.upsert(filteredServerObj);
+      const query = db.pendingactions
+        .find()
+        .where('eventId')
+        .eq(filteredServerObj.originalId);
+      await query.remove();
+
+      return editEventSuccess(serverObj);
+    }
+  } else {
+    // Keep server
+    db.events.upsert(filteredServerObj);
+  }
+};
+// ------------------------------------ PENDING ACTIONS ------------------------------------ //

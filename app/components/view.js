@@ -15,7 +15,7 @@ import {
   // SearchFilter,
   // FolderSchema,
   // FolderView,
-  ExchangeCredentials
+  ExchangeCredentials,
   // WindowsLiveCredentials,
   // ClientCertificateCredentials,
   // PartnerTokenCredentials,
@@ -33,7 +33,13 @@ import {
   // Folder,
   // Mailbox,
   // ItemView
+  Item,
+  PropertySet,
+  ItemSchema,
+  ItemId,
+  DateTime
 } from 'ews-javascript-api';
+
 import getDb from '../db';
 import * as ProviderTypes from '../utils/constants';
 import SignupSyncLink from './SignupSyncLink';
@@ -64,7 +70,9 @@ export default class View extends React.Component {
       currentEventStartDateTime: '',
       currentEventEndDateTime: '',
       exchangeEmail: 'e0176993@u.nus.edu',
-      exchangePwd: 'Ggrfw4406@nus41'
+      exchangePwd: 'Ggrfw4406@nus41',
+      tempid:
+        'AAMkAGZlZDEyNmMxLTMyNDgtNDMzZi05ZmZhLTU5ODk3ZjA5ZjQyOABGAAAAAAA/XPNVbhVJSbREEYK0xJ3FBwCK0Ut7mQOxT5W1Wd82ZSuqAAAAAAENAACK0Ut7mQOxT5W1Wd82ZSuqAAG7pSLSAAA='
     };
     let incrementalSync;
 
@@ -229,6 +237,33 @@ export default class View extends React.Component {
 
     const { props } = this;
     const db = await getDb();
+    // await db.pendingactions.upsert({
+    //   eventId:
+    //     'AAMkAGZlZDEyNmMxLTMyNDgtNDMzZi05ZmZhLTU5ODk3ZjA5ZjQyOABGAAAAAAA/XPNVbhVJSbREEYK0xJ3FBwCK0Ut7mQOxT5W1Wd82ZSuqAAAAAAENAACK0Ut7mQOxT5W1Wd82ZSuqAAGuImrLAAA=',
+    //   status: 'pending',
+    //   type: 'delete'
+    //   // lastUpdatedTime: '2019-04-17T03:15:11-07:00'
+    // });
+
+    // await db.pendingactions.upsert({
+    //   eventId:
+    //     'AAMkAGZlZDEyNmMxLTMyNDgtNDMzZi05ZmZhLTU5ODk3ZjA5ZjQyOABGAAAAAAA/XPNVbhVJSbREEYK0xJ3FBwCK0Ut7mQOxT5W1Wd82ZSuqAAAAAAENAACK0Ut7mQOxT5W1Wd82ZSuqAAHEHSAcAAA=',
+    //   status: 'pending',
+    //   type: 'update'
+    //   // lastUpdatedTime: '2019-04-23T18:07:24-07:00'
+    // });
+
+    const eventsz = await db.events.find().exec();
+    console.log(eventsz);
+
+    const actions = await db.pendingactions.find().exec();
+    console.log(actions);
+
+    // const events = await db.events.find().exec();
+    // console.log(events);
+
+    console.log(DateTime.Now, DateTime.UtcNow);
+
     db.persons
       .find()
       .exec()
@@ -304,12 +339,9 @@ export default class View extends React.Component {
     this.incrementalSync = null;
   }
 
-  // Outlook OAuth Functions
-
   authorizeOutLookCodeRequest = () => {
     const { props } = this;
     props.beginOutlookAuth();
-    // return BASE_URL + PARAMS_URL;
   };
 
   authorizeGoogleCodeRequest = () => {
@@ -383,6 +415,24 @@ export default class View extends React.Component {
       username: state.exchangeEmail,
       password: state.exchangePwd
     });
+  };
+
+  test = async e => {
+    e.preventDefault();
+    const { state } = this;
+
+    console.log(state.tempid);
+
+    const exch = new ExchangeService();
+    exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
+    exch.Credentials = new ExchangeCredentials(
+      'e0176993@u.nus.edu',
+      'Ggrfw4406@nus41'
+    );
+
+    const item = await Item.Bind(exch, new ItemId(state.tempid));
+
+    console.log(item);
   };
   // Exchange login handling here first, will move it in the future!!
 
@@ -490,6 +540,48 @@ export default class View extends React.Component {
 
     return (
       <div>
+        <a
+          role="button"
+          tabIndex="0"
+          className="waves-effect waves-light btn"
+          onClick={() => props.beginPollingEvents()}
+        >
+          <i className="material-icons left">close</i>Begin Poll Events
+        </a>{' '}
+        <a
+          role="button"
+          tabIndex="0"
+          className="waves-effect waves-light btn"
+          onClick={() => props.endPollingEvents()}
+        >
+          <i className="material-icons left">close</i>End Poll Events
+        </a>{' '}
+        <a
+          role="button"
+          tabIndex="0"
+          className="waves-effect waves-light btn"
+          onClick={() => props.beginPendingActions(props.providers)}
+        >
+          <i className="material-icons left">close</i>Begin Pending Actions
+        </a>{' '}
+        <a
+          role="button"
+          tabIndex="0"
+          className="waves-effect waves-light btn"
+          onClick={() => props.endPendingActions()}
+        >
+          <i className="material-icons left">close</i>End Pending Actions
+        </a>{' '}
+        <form onSubmit={this.test}>
+          <input
+            type="text"
+            name="tempid"
+            value={state.tempid}
+            onChange={this.test}
+            placeholder="id"
+          />
+          <input type="submit" value="Submit" />
+        </form>
         <form onSubmit={this.handleSubmit}>
           <input
             type="text"

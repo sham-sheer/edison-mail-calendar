@@ -33,6 +33,12 @@ export const DELETE_EVENT_FAILURE_API = 'DELETE_EVENT_FAILURE_API';
 
 export const API_ERROR = 'API_ERROR';
 
+export const BEGIN_POLLING_EVENTS = 'BEGIN_POLLING_EVENTS';
+export const END_POLLING_EVENTS = 'END_POLLING_EVENTS';
+
+export const BEGIN_PENDING_ACTIONS = 'BEGIN_PENDING_ACTIONS';
+export const END_PENDING_ACTIONS = 'END_PENDING_ACTIONS';
+
 export const beginGetGoogleEvents = resp => ({
   type: GET_EVENTS_BEGIN,
   payload: resp
@@ -77,9 +83,9 @@ export const beginDeleteEvent = id => ({
   payload: id
 });
 
-export const deleteEventSuccess = id => ({
+export const deleteEventSuccess = (id, user) => ({
   type: DELETE_EVENT_SUCCESS,
-  payload: id
+  payload: { id, user }
 });
 
 // ---------------------- OUTLOOK ---------------------- //
@@ -158,3 +164,24 @@ export const clearAllEventsSuccess = () => ({
   type: SUCCESS_CLEAR_ALL_EVENTS
 });
 // ---------------------- GENERAL ---------------------- //
+
+// ---------------------- POLLING ---------------------- //
+export const beginPollingEvents = payload => ({
+  type: BEGIN_POLLING_EVENTS
+});
+
+export const endPollingEvents = payload => ({
+  type: END_POLLING_EVENTS
+});
+// ---------------------- POLLING ---------------------- //
+
+// ---------------------- POLLING ---------------------- //
+export const beginPendingActions = payload => ({
+  type: BEGIN_PENDING_ACTIONS,
+  payload
+});
+
+export const endPendingActions = payload => ({
+  type: END_PENDING_ACTIONS
+});
+// ---------------------- POLLING ---------------------- //

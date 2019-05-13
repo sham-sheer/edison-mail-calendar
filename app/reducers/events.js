@@ -2,7 +2,8 @@ import {
   UPDATE_STORED_EVENTS,
   SUCCESS_STORED_EVENTS,
   RETRIEVE_STORED_EVENTS,
-  DUPLICATE_ACTION
+  DUPLICATE_ACTION,
+  SYNC_STORED_EVENTS
 } from '../actions/db/events';
 
 const initialState = {
@@ -22,7 +23,25 @@ const mergeEvents = (oldEvents, newItems) => {
   return newPayload;
 };
 
+const syncEvents = (oldEvents, newEvents) => {
+  const newPayload = [...oldEvents];
+  for (const newEvent of newEvents) {
+    const result = oldEvents.find(oldEvent => newEvent.id === oldEvent.id);
+    if (result === undefined) {
+      // Means not found, push it in.
+      newPayload.push(newEvent);
+    } else {
+      // Update the event.
+      const pos = newPayload.map(object => object.id).indexOf(newEvent.id);
+      console.log(pos);
+      newPayload[pos] = newEvent;
+    }
+  }
+  return newPayload;
+};
+
 export default function eventsReducer(state = initialState, action) {
+  console.log('event middleware', action);
   if (action === undefined) {
     return state;
   }
@@ -34,10 +53,15 @@ export default function eventsReducer(state = initialState, action) {
       // return Object.assign({}, state, { calEvents: action.payload });
       // return Object.assign({}, state, { calEvents: state.calEvents.concat(action.payload) });
       // return Object.assign({}, state, { calEvents: mergeEvents(state.calEvents, action.payload) });
-      return Object.assign({}, state, { calEvents: action.payload });
+      return Object.assign({}, state, { calEvents: action.payload.resp });
     case SUCCESS_STORED_EVENTS: {
       // debugger;
       const newEvents = mergeEvents(state.calEvents, action.payload);
+      return Object.assign({}, state, { calEvents: newEvents });
+    }
+    case SYNC_STORED_EVENTS: {
+      const newEvents = syncEvents(state.calEvents, action.payload);
+      console.log(newEvents);
       return Object.assign({}, state, { calEvents: newEvents });
     }
     case DUPLICATE_ACTION:

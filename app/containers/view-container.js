@@ -17,7 +17,11 @@ import {
   beginGetOutlookEvents,
   beginGetExchangeEvents,
   beginDeleteEvent,
-  clearAllEvents
+  clearAllEvents,
+  beginPollingEvents,
+  endPollingEvents,
+  beginPendingActions,
+  endPendingActions
 } from '../actions/events';
 import getFilteredEvents from '../selectors/ui-selector';
 
@@ -39,8 +43,8 @@ const mapDispatchToProps = dispatch => ({
   beginGetExchangeEvents: resp => dispatch(beginGetExchangeEvents(resp)),
   beginExchangeAuth: user => dispatch(beginExchangeAuth(user)),
 
-  retrieveStoreEvents: providerType =>
-    dispatch(retrieveStoreEvents(providerType)),
+  retrieveStoreEvents: (providerType, user) =>
+    dispatch(retrieveStoreEvents(providerType, user)),
   beginDeleteEvent: id => dispatch(beginDeleteEvent(id)),
 
   clearAllEvents: () => dispatch(clearAllEvents()),
@@ -50,7 +54,13 @@ const mapDispatchToProps = dispatch => ({
   onStartGetExchangeAuth: user => dispatch(successExchangeAuth(user)),
 
   onExpiredOutlook: user => dispatch(expiredOutlookAuth(user)),
-  onExpiredGoogle: user => dispatch(expiredGoogleAuth(user))
+  onExpiredGoogle: user => dispatch(expiredGoogleAuth(user)),
+
+  beginPollingEvents: () => dispatch(beginPollingEvents()),
+  endPollingEvents: () => dispatch(endPollingEvents()),
+
+  beginPendingActions: providers => dispatch(beginPendingActions(providers)),
+  endPendingActions: () => dispatch(endPendingActions())
 });
 
 export default connect(

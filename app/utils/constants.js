@@ -64,6 +64,7 @@ export const filterIntoSchema = (dbEvent, type, owner) => {
       dbEvent.providerType = GOOGLE;
       dbEvent.owner = owner;
       dbEvent.incomplete = false;
+      dbEvent.hide = false;
 
       return dbEvent;
     case OUTLOOK:
@@ -124,6 +125,8 @@ export const filterIntoSchema = (dbEvent, type, owner) => {
       // schemaCastedDbObject.source = dbEvent.responseStatus;
       schemaCastedDbObject.providerType = OUTLOOK;
       schemaCastedDbObject.incomplete = false;
+      schemaCastedDbObject.hide = false;
+
       return schemaCastedDbObject;
     case EXCHANGE:
       /*
@@ -175,11 +178,13 @@ export const filterIntoSchema = (dbEvent, type, owner) => {
       schemaCastedDbObject.end = {
         dateTime: dbEvent.End.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ')
       };
-      schemaCastedDbObject.owner = owner;
+      schemaCastedDbObject.owner =
+        dbEvent.owner === undefined ? owner : dbEvent.owner;
       schemaCastedDbObject.providerType = EXCHANGE;
       schemaCastedDbObject.summary = dbEvent.Subject;
       schemaCastedDbObject.incomplete = false;
-
+      schemaCastedDbObject.local = true;
+      schemaCastedDbObject.hide = false;
       // console.log("here4");
 
       [
@@ -434,3 +439,13 @@ const exchangeTryCatchCannotBeNullFunc = (
     object.incomplete = true;
   }
 };
+
+export const filterUsersIntoSchema = rxObj => ({
+  personId: rxObj.personId,
+  originalId: rxObj.originalId,
+  email: rxObj.email,
+  providerType: rxObj.providerType,
+  accessToken: rxObj.accessToken,
+  accessTokenExpiry: rxObj.accessTokenExpiry,
+  password: rxObj.password
+});

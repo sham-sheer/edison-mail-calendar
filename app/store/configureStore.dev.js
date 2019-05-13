@@ -52,17 +52,17 @@ const configureStore = (initialState?: counterStateType) => {
     window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
   /* eslint-enable no-underscore-dangle */
 
-  // Apply Middleware & Compose Enhancers
-  enhancers.push(
-    applyMiddleware(
-      ...middleware,
-      authBeginMiddleware,
-      authSuccessMiddleware,
-      epicMiddleware,
-      loggerMiddleware
-    )
-  );
-  const enhancer = composeEnhancers(...enhancers);
+  // // Apply Middleware & Compose Enhancers
+  // enhancers.push(
+  //   applyMiddleware(
+  //     ...middleware,
+  //     authBeginMiddleware,
+  //     authSuccessMiddleware,
+  //     epicMiddleware,
+  //     loggerMiddleware
+  //   )
+  // );
+  // const enhancer = composeEnhancers(...enhancers);
 
   // Create Store
   const store = createStore(

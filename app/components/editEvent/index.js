@@ -4,7 +4,8 @@ import moment from 'moment';
 
 import {
   ConflictResolutionMode,
-  SendInvitationsOrCancellationsMode
+  SendInvitationsOrCancellationsMode,
+  DateTime
 } from 'ews-javascript-api';
 
 import Location from './location';
@@ -15,7 +16,7 @@ import Conference from './conference';
 import Checkbox from './checkbox';
 import getDb from '../../db';
 import { loadClient, editGoogleEvent } from '../../utils/client/google';
-import { findSingleEventById } from '../../utils/client/exchange';
+import { findSingleEventById, updateEvent } from '../../utils/client/exchange';
 import './index.css';
 /* global google */
 import {
@@ -142,33 +143,49 @@ export default class EditEvent extends React.Component {
 
         console.log(user);
 
-        const singleAppointment = await findSingleEventById(
-          user.email,
-          user.password,
-          'https://outlook.office365.com/Ews/Exchange.asmx',
-          state.id
-        );
-
-        singleAppointment.Subject = state.title;
-        singleAppointment.Location = state.place.name;
-
-        singleAppointment
-          .Update(
-            ConflictResolutionMode.AlwaysOverwrite,
-            SendInvitationsOrCancellationsMode.SendToNone
-          )
-          .then(
-            async success => {
-              const db = await getDb();
-              const doc = await db.events.upsert(
-                filterIntoSchema(singleAppointment, EXCHANGE, user.email)
-              );
-              props.history.push('/');
-            },
-            error => {
-              console.log(error);
-            }
+        try {
+          const singleAppointment = await findSingleEventById(
+            user.email,
+            user.password,
+            'https://outlook.office365.com/Ews/Exchange.asmx',
+            state.id
           );
+          console.log('before: ', singleAppointment);
+
+          singleAppointment.Subject = state.title;
+          singleAppointment.Location = state.place.name;
+
+          await updateEvent(singleAppointment, user, () => {
+            props.history.push('/');
+          });
+        } catch (error) {
+          console.log('Error, retrying with pending action!');
+
+          const db = await getDb();
+          db.pendingactions.upsert({
+            eventId: state.id,
+            status: 'pending',
+            type: 'update'
+          });
+          const updateDoc = db.events
+            .find()
+            .where('originalId')
+            .eq(state.id);
+
+          await updateDoc.update({
+            $set: {
+              summary: state.title,
+              location: state.place.name
+            }
+          });
+          console.log(updateDoc.summary);
+
+          // console.log(data);
+
+          // db.events.atomicUpsert(data);
+
+          props.history.push('/');
+        }
         break;
       default:
         break;

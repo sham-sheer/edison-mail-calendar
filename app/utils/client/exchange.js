@@ -25,6 +25,11 @@ import moment from 'moment';
 import * as ProviderTypes from '../constants';
 
 import getDb from '../../db';
+import {
+  deleteEventSuccess,
+  editEventSuccess,
+  apiFailure
+} from '../../actions/events';
 
 export const filterExchangeUser = jsonObj => ({
   personId: md5(jsonObj.username),
@@ -34,7 +39,7 @@ export const filterExchangeUser = jsonObj => ({
   password: jsonObj.password
 });
 
-async function asyncExchangeRequest(username, password, url) {
+export const asyncExchangeRequest = async (username, password, url) => {
   const exch = new ExchangeService();
   exch.Url = new Uri(url);
 
@@ -59,7 +64,7 @@ async function asyncExchangeRequest(username, password, url) {
       exch.FindAppointments(WellKnownFolderName.Calendar, view).then(
         response => loopEvents(response),
         error => {
-          console.log(error);
+          // console.log(error);
         }
       )
     );
@@ -103,7 +108,7 @@ async function asyncExchangeRequest(username, password, url) {
     }
   );
   return exchangeEventsWithBody;
-}
+};
 
 export const getAllEvents = (username, password, url) =>
   asyncExchangeRequest(username, password, url);
@@ -143,13 +148,78 @@ export const createEvent = async (username, password, url, payload) => {
     );
 };
 
-export const findSingleEventById = async (username, password, url, itemId) => {
-  const exch = new ExchangeService();
-  exch.Url = new Uri(url);
-  exch.Credentials = new ExchangeCredentials(username, password);
+export const updateEvent = async (singleAppointment, user, callback) => {
+  try {
+    return await singleAppointment
+      .Update(
+        ConflictResolutionMode.AlwaysOverwrite,
+        SendInvitationsOrCancellationsMode.SendToNone
+      )
+      .then(
+        async success => {
+          const updatedItem = await findSingleEventById(
+            user.email,
+            user.password,
+            'https://outlook.office365.com/Ews/Exchange.asmx',
+            singleAppointment.Id.UniqueId
+          );
+          const db = await getDb();
+          const doc = await db.events.atomicUpsert(
+            ProviderTypes.filterIntoSchema(
+              updatedItem,
+              ProviderTypes.EXCHANGE,
+              user.email
+            )
+          );
+          const data = await db.events.find().exec();
+          console.log(
+            data.filter(
+              obj =>
+                obj.id ===
+                ProviderTypes.filterIntoSchema(
+                  updatedItem,
+                  ProviderTypes.EXCHANGE,
+                  user.email
+                ).id
+            )
+          );
+          console.log(
+            'after: ',
+            updatedItem,
+            ProviderTypes.filterIntoSchema(
+              updatedItem,
+              ProviderTypes.EXCHANGE,
+              user.email
+            ),
+            singleAppointment
+          );
+          console.log(DateTime.Now, DateTime.UtcNow);
+          callback();
+          return editEventSuccess(updatedItem);
+        },
+        error => {
+          console.log('error:', error);
+          throw error;
+        }
+      );
+  } catch (error) {
+    console.log('(updateEvent) Error: ', error);
+    throw error;
+  }
+};
 
-  const appointment = await Appointment.Bind(exch, new ItemId(itemId));
-  return appointment;
+export const findSingleEventById = async (username, password, url, itemId) => {
+  try {
+    const exch = new ExchangeService();
+    exch.Url = new Uri(url);
+    exch.Credentials = new ExchangeCredentials(username, password);
+
+    const appointment = await Appointment.Bind(exch, new ItemId(itemId));
+    return appointment;
+  } catch (error) {
+    console.log('(findSingleEventById) Error: ', error);
+    throw error;
+  }
 };
 
 export const asyncDeleteSingleEventById = async (
@@ -164,4 +234,35 @@ export const asyncDeleteSingleEventById = async (
 
   const item = await Appointment.Bind(exch, new ItemId(itemId));
   await item.Delete(DeleteMode.MoveToDeletedItems);
+};
+
+export const exchangeDeleteEvent = async (
+  singleAppointment,
+  user,
+  callback
+) => {
+  try {
+    return await singleAppointment.Delete(DeleteMode.MoveToDeletedItems).then(
+      async success => {
+        const db = await getDb();
+        const query = db.events
+          .find()
+          .where('originalId')
+          .eq(singleAppointment.Id.UniqueId);
+        await query.remove();
+        const data = await db.events.find().exec();
+        console.log(data);
+        console.log(DateTime.Now, DateTime.UtcNow);
+        callback();
+        return deleteEventSuccess(singleAppointment.Id.UniqueId, user);
+      },
+      error => {
+        console.log('error:', error);
+        throw error;
+      }
+    );
+  } catch (error) {
+    console.log('(deleteEvent) Error: ', error);
+    throw error;
+  }
 };
