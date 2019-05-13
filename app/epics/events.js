@@ -46,15 +46,12 @@ import {
   deleteGoogleEvent,
   editGoogleEvent
 } from '../utils/client/google';
-
 import * as Providers from '../utils/constants';
-
 import {
   getUserEvents,
   getAccessToken,
   filterEventToOutlook
 } from '../utils/client/outlook';
-
 import {
   getAllEvents,
   asyncExchangeRequest,
@@ -62,9 +59,7 @@ import {
   updateEvent,
   asyncDeleteSingleEventById,
   exchangeDeleteEvent
-  // createEvent
 } from '../utils/client/exchange';
-
 import {
   GET_EVENTS_BEGIN,
   EDIT_EVENT_BEGIN,
@@ -75,15 +70,15 @@ import {
   BEGIN_POLLING_EVENTS,
   END_POLLING_EVENTS,
   BEGIN_PENDING_ACTIONS,
+  END_PENDING_ACTIONS,
+  CLEAR_ALL_EVENTS_SUCCESS,
   apiFailure,
   getEventsSuccess,
   postEventSuccess,
   editEventSuccess,
   getEventsFailure,
   clearAllEventsSuccess,
-  endPollingEvents,
-  END_PENDING_ACTIONS,
-  CLEAR_ALL_EVENTS_SUCCESS
+  endPollingEvents
 } from '../actions/events';
 import getDb from '../db';
 import * as Credentials from '../utils/Credentials';
@@ -167,14 +162,6 @@ export const beginPostEventEpics = action$ =>
       }
     })
   );
-
-// export const deleteEventEpics = action$ => action$.pipe(
-//   ofType(DELETE_EVENT_BEGIN),
-//   mergeMap(action => from(deleteEvent(action.payload)).pipe(
-//      map(resp => deleteEventSuccess([resp.result]))
-//   )
-//  )
-// )
 
 const postEvent = async resource => {
   const calendarObject = {
@@ -445,21 +432,21 @@ export const pollingEventsEpics = action$ => {
       interval(10 * 1000).pipe(
         takeUntil(stopPolling$),
         switchMap(() => from(syncEvents(action))),
-        map(events =>
-          events.map(singleEvent => ({
-            id: singleEvent.id,
-            end: singleEvent.end,
-            start: singleEvent.start,
-            summary: singleEvent.summary,
-            organizer: singleEvent.organizer,
-            recurrence: singleEvent.recurrence,
-            iCalUID: singleEvent.iCalUID,
-            attendees: singleEvent.attendees,
-            originalId: singleEvent.originalId,
-            owner: singleEvent.owner,
-            hide: singleEvent.hide
-          }))
-        ),
+        // map(events =>
+        //   events.map(singleEvent => ({
+        //     id: singleEvent.id,
+        //     end: singleEvent.end,
+        //     start: singleEvent.start,
+        //     summary: singleEvent.summary,
+        //     organizer: singleEvent.organizer,
+        //     recurrence: singleEvent.recurrence,
+        //     iCalUID: singleEvent.iCalUID,
+        //     attendees: singleEvent.attendees,
+        //     originalId: singleEvent.originalId,
+        //     owner: singleEvent.owner,
+        //     hide: singleEvent.hide
+        //   }))
+        // ),
         map(results => syncStoredEvents(results))
       )
     )
@@ -486,25 +473,30 @@ const syncEvents = async action => {
         const updatedEvents = [];
         const listOfPriomises = [];
 
+        // const idSet = new Set();
+
+        // console.log(appts);
+
         for (const appt of appts) {
           if (appt.IsRecurring) {
             continue;
           }
 
+          // idSet.add(appt.Id.UniqueId);
+
           const dbObj = dbEvents.filter(
             dbEvent => dbEvent.originalId === appt.Id.UniqueId
           );
 
+          const filteredEvent = Providers.filterIntoSchema(
+            appt,
+            Providers.EXCHANGE,
+            user.email
+          );
+
           if (dbObj.length === 0) {
             // New object from server, add and move on to next one.
-            // console.log('Found new object!!', appt);
-            const filteredEvent = Providers.filterIntoSchema(
-              appt,
-              Providers.EXCHANGE,
-              user.email
-            );
-
-            updatedEvents.push(filteredEvent);
+            updatedEvents.push({ event: filteredEvent, type: 'create' });
             listOfPriomises.push(db.events.upsert(filteredEvent));
           } else {
             // Sync old objects and compare in case.
@@ -515,17 +507,49 @@ const syncEvents = async action => {
               appt.Id.UniqueId === dbEvent.originalId &&
               appt.LastModifiedTime.getMomentDate() > lastUpdatedTime
             ) {
-              const filteredEvent = Providers.filterIntoSchema(
-                appt,
-                Providers.EXCHANGE,
-                user.email
-              );
-
-              updatedEvents.push(filteredEvent);
+              updatedEvents.push({ event: filteredEvent, type: 'update' });
               listOfPriomises.push(db.events.upsert(filteredEvent));
             }
           }
         }
+
+        // Check for deleted events, as if it not in the set, it means that it could be deleted.
+        // In database, but not on server, as we are taking server, we just assume delete.
+        for (const dbEvent of dbEvents) {
+          const result = appts.find(
+            appt => appt.Id.UniqueId === dbEvent.originalId
+          );
+          if (result !== undefined) {
+            continue;
+          }
+          // console.log(
+          //   'Found a event deleted remotely, but not locally',
+          //   dbEvent
+          // );
+
+          // Means not found, delete it.
+          updatedEvents.push({
+            event: Providers.filterEventIntoSchema(dbEvent),
+            type: 'delete'
+          });
+
+          const query = db.events
+            .find()
+            .where('originalId')
+            .eq(dbEvent.originalId);
+          listOfPriomises.push(query.remove());
+          // if (idSet.has(dbEvent.originalId)) {
+          //   continue;
+          // }
+
+          // Deal with the specific event that could be deleted.
+          // If the code comes here, it means we found an event that is
+          // 1. Not in the appointment array from the server
+          // 2. Not in the set
+          // This means, It is not a new event and is not on the server, aka, deleted.
+          // updatedEvents.push(filteredEvent);
+        }
+        // console.log('here?!');
         await Promise.all(listOfPriomises);
         return updatedEvents;
       } catch (error) {
@@ -583,13 +607,11 @@ const reflect = p =>
 
 const handlePendingActions = async (users, actions, db) => {
   const docs = await db.events.find().exec();
-  console.log(users, actions);
-  console.log(docs);
+  // console.log(users, actions);
+  // console.log(docs);
 
   const promisesArr = actions.map(async action => {
     const rxDbObj = docs.filter(obj => obj.originalId === action.eventId)[0];
-    // console.log(rxDbObj.providerType, users[rxDbObj.providerType]);
-
     const user = users[rxDbObj.providerType].filter(
       indivAcc => indivAcc.owner === rxDbObj.email
     )[0];
@@ -614,7 +636,6 @@ const handlePendingActions = async (users, actions, db) => {
           return apiFailure('Unhandled provider for Pending actions');
       }
 
-      // console.log(serverObj);
       const resultingAction = await handleMergeEvents(
         rxDbObj,
         serverObj,
@@ -622,7 +643,6 @@ const handlePendingActions = async (users, actions, db) => {
         action.type,
         user
       );
-      // console.log(resultingAction);
       return { result: resultingAction, user };
     } catch (error) {
       throw error;
@@ -637,9 +657,7 @@ const handlePendingActions = async (users, actions, db) => {
   // However, I need to retrieve stored events for the providers that are fulfilled, and not those who are not.
   const result = await Promise.all(promisesArr.map(reflect));
   const appendedUsers = [];
-  // console.log(result);
   const noDuplicateUsers = result.reduce((a, b) => {
-    // console.log(a, b);
     if (
       b.status === 'fulfilled' && // ensure that it is a success
       !a.some(singleUser => _.isEqual(singleUser.v.user, b.v.user)) && // ensure that the same user is not inside
@@ -666,7 +684,7 @@ const handlePendingActions = async (users, actions, db) => {
 };
 
 const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
-  console.log(localObj, serverObj, localObj.local);
+  // console.log(localObj, serverObj, localObj.local);
   const filteredServerObj = Providers.filterIntoSchema(
     serverObj,
     localObj.providerType,
@@ -682,7 +700,7 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
 
   if (localObj.local) {
     const dateIsSame = localUpdatedTime.isSame(serverUpdatedTime);
-    console.log(`Date is Same: ${dateIsSame}`);
+    // console.log(`Date is Same: ${dateIsSame}`);
 
     if (dateIsSame) {
       // Take local
@@ -695,9 +713,7 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
           console.log('Running exchange: ', type);
           switch (type) {
             case 'update':
-              console.log('Update type, Call update on exchange');
-              // console.log(localObj, serverObj, db, type);
-
+              // console.log('Update type, Call update on exchange');
               // TO-DO, add more update fields
               serverObj.Subject = localObj.summary;
               serverObj.Location = localObj.location;
@@ -729,11 +745,11 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
               }
               return result;
             case 'delete':
-              console.log('Delete type, Deleting appt on exchange now');
+              // console.log('Delete type, Deleting appt on exchange now');
               // console.log(localObj, serverObj, db, type);
 
               result = await exchangeDeleteEvent(serverObj, user, () => {
-                console.log('deleted exchange event');
+                // console.log('deleted exchange event');
               });
 
               if (result.type === 'DELETE_EVENT_SUCCESS') {

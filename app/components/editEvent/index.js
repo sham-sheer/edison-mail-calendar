@@ -136,12 +136,9 @@ export default class EditEvent extends React.Component {
         const editResp = await editGoogleEvent(state.id, eventPatch);
         return editResp;
       case EXCHANGE:
-        const user = props.providers.EXCHANGE.filter(object => {
-          console.log(object.email, state.owner);
-          return object.email === state.owner;
-        })[0]; // this validates which user the event belongs to, by email.
-
-        console.log(user);
+        const user = props.providers.EXCHANGE.filter(
+          object => object.email === state.owner
+        )[0]; // this validates which user the event belongs to, by email.
 
         try {
           const singleAppointment = await findSingleEventById(
@@ -150,7 +147,6 @@ export default class EditEvent extends React.Component {
             'https://outlook.office365.com/Ews/Exchange.asmx',
             state.id
           );
-          console.log('before: ', singleAppointment);
 
           singleAppointment.Subject = state.title;
           singleAppointment.Location = state.place.name;
@@ -159,7 +155,7 @@ export default class EditEvent extends React.Component {
             props.history.push('/');
           });
         } catch (error) {
-          console.log('Error, retrying with pending action!');
+          // console.log('Error, retrying with pending action!');
 
           const db = await getDb();
           db.pendingactions.upsert({
@@ -178,46 +174,13 @@ export default class EditEvent extends React.Component {
               location: state.place.name
             }
           });
-          console.log(updateDoc.summary);
-
-          // console.log(data);
-
-          // db.events.atomicUpsert(data);
-
+          // console.log(updateDoc.summary);
           props.history.push('/');
         }
         break;
       default:
         break;
     }
-
-    // await loadClient();
-    // // Error Handling
-    // const startDateTime = momentAdd(this.state.startDay, this.state.startTime);
-    // const endDateTime = momentAdd(this.state.endDay, this.state.endTime);
-    // const attendeeForAPI = this.state.attendees.map(attendee => {
-    //   return {
-    //     email: attendee.value
-    //   }
-    // })
-    // let eventPatch = {
-    //   summary: this.state.title,
-    //   start: {
-    //     dateTime: startDateTime
-    //   },
-    //   end: {
-    //     dateTime: endDateTime
-    //   },
-    //   location: this.state.place.name,
-    //   attendees: attendeeForAPI,
-    // };
-    // if(this.state.conference.label === 'Hangouts') {
-    //   eventPatch.conferenceData = {
-    //     createRequest: {requestId: "7qxalsvy0e"}
-    //   }
-    // }
-    // const editResp = await editGoogleEvent(this.state.id, eventPatch);
-    // return editResp;
   };
 
   // // So the plan here is,

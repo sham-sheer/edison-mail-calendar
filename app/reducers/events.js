@@ -24,16 +24,23 @@ const mergeEvents = (oldEvents, newItems) => {
 
 const syncEvents = (oldEvents, newEvents) => {
   const newPayload = [...oldEvents];
+  console.log(newEvents, newPayload);
   for (const newEvent of newEvents) {
-    const result = oldEvents.find(oldEvent => newEvent.id === oldEvent.id);
-    if (result === undefined) {
-      // Means not found, push it in.
-      newPayload.push(newEvent);
-    } else {
-      // Update the event.
-      const pos = newPayload.map(object => object.id).indexOf(newEvent.id);
-      console.log(pos);
-      newPayload[pos] = newEvent;
+    const pos = newPayload
+      .map(object => object.originalId)
+      .indexOf(newEvent.event.originalId);
+    switch (newEvent.type) {
+      case 'create':
+        newPayload.push(newEvent.event);
+        break;
+      case 'delete':
+        newPayload.splice(pos, 1);
+        break;
+      case 'update':
+        newPayload[pos] = newEvent.event;
+        break;
+      default:
+        break;
     }
   }
   return newPayload;

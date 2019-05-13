@@ -445,3 +445,25 @@ export const filterUsersIntoSchema = rxObj => ({
   accessTokenExpiry: rxObj.accessTokenExpiry,
   password: rxObj.password
 });
+
+export const filterEventIntoSchema = rxObj => ({
+  allDay: rxObj.allDay,
+  id: rxObj.id,
+  end: rxObj.end,
+  start: rxObj.start,
+  created: rxObj.created,
+  updated: rxObj.updated,
+  summary: rxObj.summary,
+  organizer: rxObj.organizer,
+  recurrence: rxObj.recurrence,
+  iCalUID: rxObj.iCalUID,
+  attendees: rxObj.attendees,
+  htmlLink: rxObj.htmlLink,
+  originalId: rxObj.originalId,
+  owner: rxObj.owner,
+  incomplete: rxObj.incomplete,
+  providerType: rxObj.providerType,
+  status: rxObj.status,
+  local: rxObj.local,
+  hide: rxObj.hide
+});

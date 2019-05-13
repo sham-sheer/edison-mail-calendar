@@ -54,7 +54,7 @@ export const asyncExchangeRequest = async (username, password, url) => {
     exchangeEvents = exchangeEvents.concat(response.Items);
   }
 
-  console.log('Started exchange sync');
+  // console.log('Started exchange sync');
   const results = [];
   // If you want an exclusive end date (half-open interval)
   for (let m = moment(a); m.isBefore(b); m.add(23, 'month')) {
@@ -70,7 +70,7 @@ export const asyncExchangeRequest = async (username, password, url) => {
     prev = prev.add(23, 'month');
   }
   await Promise.all(results);
-  console.log('Finished exchange sync');
+  // console.log('Finished exchange sync');
 
   const arrayOfIdAndChangekey = [];
   const arrayOfIds = [];
