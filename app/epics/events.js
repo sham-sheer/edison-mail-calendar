@@ -587,10 +587,7 @@ export const pendingActionsEpics = action$ => {
                 // switchmap at top is reason for it, handle for future. lol
                 mergeMap(actions =>
                   from(handlePendingActions(action.payload, actions, db)).pipe(
-                    mergeMap(result => {
-                      console.log(result);
-                      return of(...result);
-                    })
+                    mergeMap(result => of(...result))
                   )
                 )
               )
@@ -710,7 +707,7 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
         case Providers.OUTLOOK:
           break;
         case Providers.EXCHANGE:
-          console.log('Running exchange: ', type);
+          // console.log('Running exchange: ', type);
           switch (type) {
             case 'update':
               // console.log('Update type, Call update on exchange');

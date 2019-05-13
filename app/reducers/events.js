@@ -24,7 +24,6 @@ const mergeEvents = (oldEvents, newItems) => {
 
 const syncEvents = (oldEvents, newEvents) => {
   const newPayload = [...oldEvents];
-  console.log(newEvents, newPayload);
   for (const newEvent of newEvents) {
     const pos = newPayload
       .map(object => object.originalId)
