@@ -37,7 +37,6 @@ const convertHour = i => {
 };
 
 export const momentAdd = (day, time) => {
-  debugger;
   const editedDay = moment(day)
     .set('H', parseInt(time.substring(0, 2), 10))
     .set('m', parseInt(time.substring(3), 10));

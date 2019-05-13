@@ -154,14 +154,14 @@ export const getExchangeEventsSuccess = resp => ({
 
 // ---------------------- GENERAL ---------------------- //
 export const CLEAR_ALL_EVENTS = 'CLEAR_ALL_EVENTS';
-export const SUCCESS_CLEAR_ALL_EVENTS = 'SUCCESS_CLEAR_ALL_EVENTS';
+export const CLEAR_ALL_EVENTS_SUCCESS = 'CLEAR_ALL_EVENTS_SUCCESS';
 
 export const clearAllEvents = () => ({
   type: CLEAR_ALL_EVENTS
 });
 
 export const clearAllEventsSuccess = () => ({
-  type: SUCCESS_CLEAR_ALL_EVENTS
+  type: CLEAR_ALL_EVENTS_SUCCESS
 });
 // ---------------------- GENERAL ---------------------- //
 

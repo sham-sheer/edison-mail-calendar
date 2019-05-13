@@ -23,6 +23,10 @@ import {
   beginPendingActions,
   endPendingActions
 } from '../actions/events';
+import {
+  beginRetrieveCaldavEvents,
+  resetCaldavAccount
+} from '../actions/caldav';
 import getFilteredEvents from '../selectors/ui-selector';
 
 const mapStateToProps = state => ({
@@ -60,7 +64,10 @@ const mapDispatchToProps = dispatch => ({
   endPollingEvents: () => dispatch(endPollingEvents()),
 
   beginPendingActions: providers => dispatch(beginPendingActions(providers)),
-  endPendingActions: () => dispatch(endPendingActions())
+  endPendingActions: () => dispatch(endPendingActions()),
+
+  beginRetrieveCalDavEvents: () => dispatch(beginRetrieveCaldavEvents()),
+  resetCaldavAccount: () => dispatch(resetCaldavAccount())
 });
 
 export default connect(

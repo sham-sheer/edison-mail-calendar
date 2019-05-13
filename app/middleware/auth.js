@@ -40,7 +40,6 @@ export const authBeginMiddleware = store => next => action => {
   }
 
   if (action.type === AuthActionTypes.BEGIN_GOOGLE_AUTH) {
-    debugger;
     GoogleAuth = window.gapi.auth2.getAuthInstance();
     // GoogleAuth.signIn();
     handleAuthClick(GoogleAuth);

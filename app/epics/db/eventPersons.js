@@ -22,7 +22,6 @@ const storeEventPersonEpic = action$ =>
 
 const storeEventPerson = async payload => {
   const db = await getDb();
-  debugger;
   return payload.forEach(async attendee => {
     if (attendee !== undefined) {
       try {

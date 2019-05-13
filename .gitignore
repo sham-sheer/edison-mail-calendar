@@ -49,3 +49,6 @@ main.js.map
 
 .idea
 npm-debug.log.*
+
+#Credentials
+app/utils/Credentials.js

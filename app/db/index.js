@@ -1,22 +1,14 @@
 import * as RxDB from 'rxdb';
 import schemas from './schemas';
 
-RxDB.plugin(require('pouchdb-adapter-idb'));
-RxDB.plugin(require('pouchdb-adapter-http'));
+RxDB.plugin(require('pouchdb-adapter-node-websql'));
 
 let dbPromise = null;
-
-const collections = [
-  {
-    name: 'calendarDb',
-    schema: schemas
-  }
-];
 
 export const createDb = async () => {
   const db = await RxDB.create({
     name: 'eventsdb',
-    adapter: 'idb',
+    adapter: 'websql',
     queryChangeDetection: true
   });
   window.db = db;
@@ -29,7 +21,7 @@ export const createDb = async () => {
 };
 
 export default () => {
-  // RxDB.removeDatabase('eventsdb', 'idb');
+  // RxDB.removeDatabase('eventsdb', 'websql');
   if (!dbPromise) {
     dbPromise = createDb();
   }

@@ -1,43 +1,91 @@
+// import { combineEpics } from 'redux-observable';
+// import {
+//   retrieveEventsEpic,
+//   storeEventsEpic,
+//   beginStoreEventsEpic,
+//   deleteEventEpics
+//   // updateStoreEventsEpic
+// } from './db/events';
+// import {
+//   beginGetEventsEpics,
+//   beginGetOutlookEventsEpics,
+//   beginGetExchangeEventsEpics,
+//   beginPostEventEpics,
+//   clearAllEventsEpics
+// } from './events';
+// import storeEventPersonEpic from './db/eventPersons';
+// import {
+//   storeGoogleAuthEpic,
+//   storeOutLookAuthEpic,
+//   storeExchangeAuthEpic
+// } from './db/auth';
+//
+// const rootEpic = combineEpics(
+//   retrieveEventsEpic,
+//   storeEventsEpic,
+//   beginStoreEventsEpic,
+//   beginGetEventsEpics,
+//   beginGetOutlookEventsEpics,
+//   beginGetExchangeEventsEpics,
+//   beginPostEventEpics,
+//   deleteEventEpics,
+//   // updateStoreEventsEpic,
+//   clearAllEventsEpics,
+//   storeGoogleAuthEpic,
+//   storeOutLookAuthEpic,
+//   storeExchangeAuthEpic
+// );
+//
+// export default rootEpic;
+
+// import {
+//   retrieveEventsEpic,
+//   storeEventsEpic,
+//   beginStoreEventsEpic,
+//   deleteEventEpics
+//   // updateStoreEventsEpic
+// } from './db/events';
+// import {
+//   beginGetEventsEpics,
+//   beginGetOutlookEventsEpics,
+//   beginGetExchangeEventsEpics,
+//   beginPostEventEpics,
+//   clearAllEventsEpics,
+//   pollingEventsEpics,
+//   pendingActionsEpics
+// } from './events';
+// import storeEventPersonEpic from './db/eventPersons';
+// import {
+//   storeGoogleAuthEpic,
+//   storeOutLookAuthEpic,
+//   storeExchangeAuthEpic
+// } from './db/auth';
+
+// const rootEpic = combineEpics(
+//   retrieveEventsEpic,
+//   storeEventsEpic,
+//   beginStoreEventsEpic,
+//   beginGetEventsEpics,
+//   beginGetOutlookEventsEpics,
+//   beginGetExchangeEventsEpics,
+//   beginPostEventEpics,
+//   deleteEventEpics,
+//   // updateStoreEventsEpic,
+//   clearAllEventsEpics,
+//   storeGoogleAuthEpic,
+//   storeOutLookAuthEpic,
+//   storeExchangeAuthEpic,
+//   pollingEventsEpics,
+//   pendingActionsEpics
+
+import 'rxjs/Rx';
 import { combineEpics } from 'redux-observable';
-import {
-  retrieveEventsEpic,
-  storeEventsEpic,
-  beginStoreEventsEpic,
-  deleteEventEpics
-  // updateStoreEventsEpic
-} from './db/events';
-import {
-  beginGetEventsEpics,
-  beginGetOutlookEventsEpics,
-  beginGetExchangeEventsEpics,
-  beginPostEventEpics,
-  clearAllEventsEpics,
-  pollingEventsEpics,
-  pendingActionsEpics
-} from './events';
-import storeEventPersonEpic from './db/eventPersons';
-import {
-  storeGoogleAuthEpic,
-  storeOutLookAuthEpic,
-  storeExchangeAuthEpic
-} from './db/auth';
+import * as caldavEpics from './caldav';
+import * as eventsEpics from './events';
+import dbEpics from './db';
 
-const rootEpic = combineEpics(
-  retrieveEventsEpic,
-  storeEventsEpic,
-  beginStoreEventsEpic,
-  beginGetEventsEpics,
-  beginGetOutlookEventsEpics,
-  beginGetExchangeEventsEpics,
-  beginPostEventEpics,
-  deleteEventEpics,
-  // updateStoreEventsEpic,
-  clearAllEventsEpics,
-  storeGoogleAuthEpic,
-  storeOutLookAuthEpic,
-  storeExchangeAuthEpic,
-  pollingEventsEpics,
-  pendingActionsEpics
+export default combineEpics(
+  ...Object.values(caldavEpics),
+  ...Object.values(eventsEpics),
+  ...Object.values(dbEpics)
 );
-
-export default rootEpic;
