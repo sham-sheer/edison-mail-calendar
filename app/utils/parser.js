@@ -2,6 +2,10 @@ import React from 'react';
 import ICAL from 'ical.js';
 import moment from 'moment';
 import uniqid from 'uniqid';
+import { RRule, RRuleSet, rrulestr } from 'rrule';
+import getDb from '../db';
+
+const TEMPORARY_RECURRENCE_END = new Date(2020, 12, 12);
 
 const parseRecurrenceEvents = calEvents => {
   const recurringEvents = [];
@@ -15,7 +19,7 @@ const parseRecurrenceEvents = calEvents => {
         interval: calEvent.recurringInterval,
         recurringTypeId: calEvent.data.start.dateTime,
         until: calEvent.rruleJSON.until,
-        exDates: calEvent.exdates,
+        exDates: calEvent.exDates,
         recurrenceIds: calEvent.recurrenceIds,
         modifiedThenDeleted: calEvent.mtd
       });
@@ -73,84 +77,65 @@ const parseCalEvents = calendars => {
 const parseEvents = (events, calendarId, creator) => {
   const parsedEvents = [];
   events.forEach(calevent => {
-    const jcalData = ICAL.parse(calevent.calendarData);
-    const ics = calevent.data.href;
-    const { etag } = calevent;
-    let mtd = false;
-    if (jcalData.length > 0) {
-      const comp = new ICAL.Component(jcalData);
-      const vevents = comp.getAllSubcomponents('vevent');
-      const modifiedOccurences = [];
-      const recurrenceIds = [];
-      // vevents.forEach((evt, index) => {
-      //   // Contains all modified occurences
-      //   if (evt.getFirstPropertyValue('recurrence-id')) {
-      //     modifiedOccurences.push({
-      //       'recurrence-id': evt.getFirstPropertyValue('recurrence-id'),
-      //       key: index
-      //     });
-      //   }
-      // });
-      vevents.forEach((evt, index) => {
-        // Contains all modified occurences
-        if (evt.getFirstPropertyValue('recurrence-id')) {
-          recurrenceIds.push(evt.getFirstProperty('recurrence-id').jCal);
-        }
-      });
-      const vevent = comp.getFirstSubcomponent('vevent');
-      const ICALEvent = new ICAL.Event(vevent);
-      let attendees = [];
-      let recurringInterval = '';
-      let rruleJSON = {};
-      const exdates = [];
-
-      if (vevent.hasProperty('exdate')) {
-        const exdateProps = vevent.getAllProperties('exdate');
-        exdateProps.forEach(exdate => exdates.push(exdate.jCal));
-      }
-
-      if (vevent.hasProperty('attendee')) {
-        attendees = parseAttendees(vevent.getAllProperties('attendee'));
-      }
-
-      if (ICALEvent.isRecurring()) {
-        // const recurringEvents = expandRecurringEvent(
-        //   vevents,
-        //   vevent,
-        //   ICALEvent,
-        //   modifiedOccurences,
-        //   ics,
-        //   attendees,
-        //   etag
-        // );
-        const rrule = vevent.getFirstPropertyValue('rrule');
-        recurringInterval = rrule.interval;
-        rruleJSON = rrule.toJSON();
-      }
-
-      if (recurrenceIds.length === 0) {
-        const eventParsed = parseICALEvent(
-          vevent,
-          attendees,
-          ICALEvent.isRecurring(),
-          calendarId,
-          creator,
-          mtd
-        );
-        parsedEvents.push({
-          ics,
-          etag,
-          rruleJSON,
-          recurringInterval,
-          exdates,
-          recurrenceIds,
-          data: eventParsed
+    if (calevent.calendarData !== undefined) {
+      const jcalData = ICAL.parse(calevent.calendarData);
+      const ics = calevent.data.href;
+      const { etag } = calevent;
+      let mtd = false;
+      if (jcalData.length > 0) {
+        const comp = new ICAL.Component(jcalData);
+        const vevents = comp.getAllSubcomponents('vevent');
+        const modifiedOccurences = [];
+        const recurrenceIds = [];
+        // vevents.forEach((evt, index) => {
+        //   // Contains all modified occurences
+        //   if (evt.getFirstPropertyValue('recurrence-id')) {
+        //     modifiedOccurences.push({
+        //       'recurrence-id': evt.getFirstPropertyValue('recurrence-id'),
+        //       key: index
+        //     });
+        //   }
+        // });
+        vevents.forEach((evt, index) => {
+          // Contains all modified occurences
+          if (evt.getFirstPropertyValue('recurrence-id')) {
+            recurrenceIds.push(evt.getFirstProperty('recurrence-id').jCal);
+          }
         });
-      } else {
-        vevents.forEach(recurvevent => {
-          mtd = isModifiedThenDeleted(recurvevent, exdates);
+        const vevent = comp.getFirstSubcomponent('vevent');
+        const ICALEvent = new ICAL.Event(vevent);
+        let attendees = [];
+        let recurringInterval = '';
+        let rruleJSON = {};
+        const exDates = [];
+
+        if (vevent.hasProperty('exdate')) {
+          const exdateProps = vevent.getAllProperties('exdate');
+          exdateProps.forEach(exdate => exDates.push(exdate.jCal));
+        }
+
+        if (vevent.hasProperty('attendee')) {
+          attendees = parseAttendees(vevent.getAllProperties('attendee'));
+        }
+
+        if (ICALEvent.isRecurring()) {
+          // const recurringEvents = expandRecurringEvent(
+          //   vevents,
+          //   vevent,
+          //   ICALEvent,
+          //   modifiedOccurences,
+          //   ics,
+          //   attendees,
+          //   etag
+          // );
+          const rrule = vevent.getFirstPropertyValue('rrule');
+          recurringInterval = rrule.interval;
+          rruleJSON = rrule.toJSON();
+        }
+
+        if (recurrenceIds.length === 0) {
           const eventParsed = parseICALEvent(
-            recurvevent,
+            vevent,
             attendees,
             ICALEvent.isRecurring(),
             calendarId,
@@ -162,24 +147,45 @@ const parseEvents = (events, calendarId, creator) => {
             etag,
             rruleJSON,
             recurringInterval,
-            exdates,
+            exDates,
             recurrenceIds,
             data: eventParsed
           });
-        });
+        } else {
+          vevents.forEach(recurvevent => {
+            mtd = isModifiedThenDeleted(recurvevent, exDates);
+            const eventParsed = parseICALEvent(
+              recurvevent,
+              attendees,
+              ICALEvent.isRecurring(),
+              calendarId,
+              creator,
+              mtd
+            );
+            parsedEvents.push({
+              ics,
+              etag,
+              rruleJSON,
+              recurringInterval,
+              exDates,
+              recurrenceIds,
+              data: eventParsed
+            });
+          });
+        }
       }
     }
   });
   return parsedEvents;
 };
 
-const isModifiedThenDeleted = (recurEvent, exdates) => {
+const isModifiedThenDeleted = (recurEvent, exDates) => {
   let isMtd = false;
-  if (exdates === 0 || !recurEvent.hasProperty('recurrence-id')) {
+  if (exDates === 0 || !recurEvent.hasProperty('recurrence-id')) {
     return isMtd;
   }
   const recurId = recurEvent.getFirstProperty('recurrence-id').jCal[3];
-  exdates.forEach(exdate => {
+  exDates.forEach(exdate => {
     if (exdate[3] === recurId) {
       isMtd = true;
       return isMtd;
@@ -198,7 +204,6 @@ const parseICALEvent = (
 ) => {
   const dtstart = vevent.getFirstPropertyValue('dtstart');
   const dtend = vevent.getFirstPropertyValue('dtend');
-  const duration = getNormalizedDuration(dtstart, dtend);
 
   return {
     id: uniqid(),
@@ -253,133 +258,125 @@ const parseAttendees = properties =>
         : property.jCal[1].email
   }));
 
-const getNormalizedDuration = (dtstart, dtend) => {
-  const duration = dtend.subtractDate(dtstart);
-
-  delete duration.wrappedJSObject;
-
-  return duration;
-};
-
-const getNormalizedEndDate = (endDate, duration) => {
-  const allDayEvent = duration.days > 0 || duration.weeks > 0;
-
-  // CalDav saves the end date of all day events as the start of the next day
-  // To fix this, we subtract one second from the end date
-  return allDayEvent
-    ? moment(endDate)
-        .subtract(1, 'seconds')
-        .toISOString()
-    : endDate.toISOString();
-};
-
-const getNormalOccurenceEventData = (nextEvent, vevent, attendee) => {
-  const dtstart = nextEvent.startDate;
-  const dtend = nextEvent.endDate;
-  const { summary: title, uid, location, description } = nextEvent.item;
-  const duration = getNormalizedDuration(dtstart, dtend);
-
-  return {
-    title,
-    uid,
-    location,
-    description,
-    start: new Date(dtstart).toISOString(),
-    end: getNormalizedEndDate(new Date(dtend), duration),
-    duration,
-    type: { recurring: true, edited: false },
-    createdAt: new Date(vevent.getFirstPropertyValue('created')).toISOString(),
-    attendee
-  };
-};
-
-const expandRecurringEvent = (
-  vevents,
-  vevent,
-  ICALEvent,
-  modifiedOccurences,
-  ics,
-  attendees,
-  etag
-) => {
-  const expand = new ICAL.RecurExpansion({
-    component: vevent,
-    dtstart: vevent.getFirstPropertyValue('dtstart')
-  });
-
-  const parsedRecurringEvents = [];
-  for (let i = 0; i < 10; i += 1) {
-    const nextOccuranceTime = expand.next();
-
-    if (!expand.complete) {
-      // Handle this next expanded occurence
-      const nextEvent = ICALEvent.getOccurrenceDetails(nextOccuranceTime);
-
-      const eventData = {};
-
-      if (modifiedOccurences.length === 0) {
-        // No events have been modified
-        parsedRecurringEvents.push({
-          ics,
-          etag,
-          data: getNormalOccurenceEventData(nextEvent, vevent, attendees)
-        });
-      } else if (isModified(nextOccuranceTime, modifiedOccurences)) {
-        // This is the event that has been modified
-        const key =
-          getModifiedOccuranceKey(nextOccuranceTime, modifiedOccurences) || 0;
-
-        parsedRecurringEvents.push({
-          ics,
-          etag,
-          data: getModifiedOccurenceEventData(vevents[key], attendees)
-        });
-      } else {
-        // Expand this event normally
-        parsedRecurringEvents.push({
-          ics,
-          etag,
-          data: getNormalOccurenceEventData(nextEvent, vevent, attendees)
-        });
-      }
-    }
-  }
-  return parsedRecurringEvents;
-};
-
-const isModified = (occurence, modifiedOccurances) =>
-  modifiedOccurances.some(
-    modifiedOcc => modifiedOcc['recurrence-id'].compare(occurence) === 0
+const expandRecurEvents = async results => {
+  const db = await getDb();
+  const nonMTDresults = results.filter(result => !result.isModifiedThenDeleted);
+  const recurringEvents = nonMTDresults.filter(
+    nonMTDresult => nonMTDresult.isRecurring
   );
-
-const getModifiedOccuranceKey = (occurence, modifiedOccurances) => {
-  const key = modifiedOccurances.forEach(modifiedOcc => {
-    if (modifiedOcc['recurrence-id'].compare(occurence) === 0) {
-      return modifiedOcc.key;
-    }
-    return null;
+  let merged = nonMTDresults;
+  const finalResults = recurringEvents.map(async recurMasterEvent => {
+    // const recurPatternOriginalIds = await db.recurrencepatterns
+    //   .find()
+    //   .where('originalId')
+    //   .eq(recurMasterEvent.originalId)
+    //   .exec();
+    const recurPatternRecurId = await db.recurrencepatterns
+      .find()
+      .where('recurringTypeId')
+      .eq(recurMasterEvent.start.dateTime)
+      .exec();
+    const recurTemp = parseRecurrence(
+      recurPatternRecurId[0].toJSON(),
+      recurMasterEvent
+    );
+    merged = [...merged, recurTemp];
+    const final = merged.reduce((acc, val) => acc.concat(val), []);
+    // debugger;
+    return final;
   });
-
-  return key;
+  return finalResults;
 };
 
-const getModifiedOccurenceEventData = (vevent, attendee) => {
-  const dtstart = vevent.getFirstPropertyValue('dtstart');
-  const dtend = vevent.getFirstPropertyValue('dtend');
-  const duration = getNormalizedDuration(dtstart, dtend);
+const parseRecurrence = (pattern, recurMasterEvent) => {
+  const recurEvents = [];
+  const ruleSet = buildRuleSet(pattern, recurMasterEvent);
+  const recurDates = ruleSet.all().map(date => date.toJSON());
+  const duration = getDuration(recurMasterEvent);
+  recurDates.forEach(recurDateTime => {
+    recurEvents.push({
+      id: recurMasterEvent.id,
+      end: {
+        dateTime: moment(recurDateTime)
+          .add(duration)
+          .toISOString(),
+        timezone: 'timezone'
+      },
+      start: {
+        dateTime: recurDateTime,
+        timezone: 'timezone'
+      },
+      summary: recurMasterEvent.summary,
+      organizer: recurMasterEvent.organizer,
+      recurrence: recurMasterEvent.recurrence,
+      iCalUID: recurMasterEvent.iCalUID,
+      attendees: recurMasterEvent.attendee,
+      originalId: recurMasterEvent.originalId,
+      creator: recurMasterEvent.creator,
+      isRecurring: recurMasterEvent.isRecurring
+    });
+  });
+  return recurEvents;
+};
 
-  return {
-    title: vevent.getFirstPropertyValue('summary'),
-    uid: vevent.getFirstPropertyValue('uid'),
-    location: vevent.getFirstPropertyValue('location'),
-    description: vevent.getFirstPropertyValue('description'),
-    start: new Date(dtstart).toISOString(),
-    end: getNormalizedEndDate(new Date(dtend), duration),
-    duration,
-    type: { recurring: true, edited: true },
-    createdAt: new Date(vevent.getFirstPropertyValue('created')).toISOString(),
-    attendee
-  };
+const buildRuleSet = (pattern, master) => {
+  const rruleSet = new RRuleSet();
+  const ruleObject = buildRuleObject(pattern, master);
+  rruleSet.rrule(new RRule(ruleObject));
+  const { exDates } = pattern;
+  exDates.forEach(exdate => rruleSet.exdate(new Date(exdate[3])));
+  const { recurrenceIds } = pattern;
+  recurrenceIds.forEach(recurDate => rruleSet.exdate(new Date(recurDate[3])));
+  const modifiedThenDeletedDates = getModifiedThenDeletedDates(
+    exDates,
+    recurrenceIds
+  );
+  /* To remove start date duplicate */
+  rruleSet.exdate(new Date(master.start.dateTime));
+  return rruleSet;
+};
+
+const getDuration = master => {
+  const start = moment(master.start.dateTime);
+  const end = moment(master.end.dateTime);
+  return moment.duration(end.diff(start));
+};
+
+const buildRuleObject = (pattern, master) => {
+  const ruleObject = {};
+  ruleObject.interval = pattern.interval;
+  ruleObject.dtstart = new Date(master.start.dateTime);
+  switch (pattern.freq) {
+    case 'YEARLY':
+      ruleObject.freq = 0;
+      break;
+    case 'MONTHLY':
+      ruleObject.freq = 1;
+      break;
+    case 'WEEKLY':
+      ruleObject.freq = 2;
+      break;
+    case 'DAILY':
+      ruleObject.freq = 3;
+      break;
+    default:
+  }
+  ruleObject.until = pattern.until
+    ? new Date(pattern.until)
+    : TEMPORARY_RECURRENCE_END;
+  return ruleObject;
+};
+
+const getModifiedThenDeletedDates = (exDates, recurDates) => {
+  const modifiedThenDeletedDates = [];
+  exDates.forEach(exdate => {
+    recurDates.forEach(recurDate => {
+      if (exdate[3] === recurDate[3]) {
+        modifiedThenDeletedDates.push(exdate);
+      }
+    });
+  });
+  return modifiedThenDeletedDates;
 };
 
 export default {
@@ -387,5 +384,6 @@ export default {
   parseCalEvents,
   parseEventPersons,
   parseRecurrenceEvents,
-  expandRecurringEvent
+  expandRecurEvents,
+  parseRecurrence
 };
