@@ -4,9 +4,12 @@ export default {
   description: 'Describes a pending action object',
   type: 'object',
   properties: {
-    eventId: {
+    uniqueId: {
       type: 'string',
       primary: true
+    },
+    eventId: {
+      type: 'string'
     },
     status: {
       type: 'string'

@@ -2,6 +2,7 @@ import { map, mergeMap, catchError } from 'rxjs/operators';
 import { ofType } from 'redux-observable';
 import { from, forkJoin } from 'rxjs';
 import { fromPromise } from 'rxjs/internal-compatibility';
+import uniqid from 'uniqid';
 import {
   RETRIEVE_STORED_EVENTS,
   BEGIN_STORE_EVENTS,
@@ -197,6 +198,7 @@ const deleteEvent = async id => {
         }
 
         db.pendingactions.upsert({
+          uniqueId: uniqid(),
           eventId: data.get('originalId'),
           status: 'pending',
           type: 'delete'

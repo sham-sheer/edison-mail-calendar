@@ -642,10 +642,10 @@ const handlePendingActions = async (users, actions, db) => {
       );
       return { result: resultingAction, user };
     } catch (error) {
-      console.log('Error here: ', error);
+      // Just remove it from database instead, and break;
+      // This is when the item has been deleted on server, but not local due to sync.
+      // Error is thrown by findSingleeventById
       if (error.ErrorCode === 249) {
-        // Just remove it from database instead, and break;
-        console.log('Edge case, just removing it from db.', action, error);
         await action.remove();
       }
       throw error;

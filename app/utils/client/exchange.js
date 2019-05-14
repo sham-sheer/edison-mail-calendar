@@ -101,7 +101,8 @@ export const asyncExchangeRequest = async (username, password, url) => {
       });
     },
     error => {
-      console.log(error);
+      console.log(error); // I got ECONNRESET or something the last time, idk how to break this so that I can ensure stability, figure out later.
+      throw error;
     }
   );
   return exchangeEventsWithBody;

@@ -7,6 +7,7 @@ import {
   SendInvitationsOrCancellationsMode,
   DateTime
 } from 'ews-javascript-api';
+import uniqid from 'uniqid';
 
 import Location from './location';
 import Attendees from './attendees';
@@ -155,10 +156,15 @@ export default class EditEvent extends React.Component {
             props.history.push('/');
           });
         } catch (error) {
-          // console.log('Error, retrying with pending action!');
+          console.log(
+            '(editEvent) Error, retrying with pending action!',
+            error,
+            state.id
+          );
 
           const db = await getDb();
-          db.pendingactions.upsert({
+          await db.pendingactions.upsert({
+            uniqueId: uniqid(),
             eventId: state.id,
             status: 'pending',
             type: 'update'
