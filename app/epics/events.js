@@ -642,6 +642,12 @@ const handlePendingActions = async (users, actions, db) => {
       );
       return { result: resultingAction, user };
     } catch (error) {
+      console.log('Error here: ', error);
+      if (error.ErrorCode === 249) {
+        // Just remove it from database instead, and break;
+        console.log('Edge case, just removing it from db.', action, error);
+        await action.remove();
+      }
       throw error;
     }
   });

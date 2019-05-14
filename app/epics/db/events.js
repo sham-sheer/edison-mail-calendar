@@ -185,14 +185,22 @@ const deleteEvent = async id => {
 
         await deleteDoc.remove();
       } catch (error) {
-        // console.log('Error, retrying with pending action!');
+        console.log('Error, retrying with pending action!', error);
+
+        // This means item has been deleted on server, maybe by another user
+        // Handle this differently.
+        if (error.ErrorCode === 249) {
+          // Just remove it from database instead, and break;
+          console.log('Edge case, just removing it from db.');
+          await deleteDoc.remove();
+          break;
+        }
 
         db.pendingactions.upsert({
           eventId: data.get('originalId'),
           status: 'pending',
           type: 'delete'
         });
-
         await deleteDoc.update({
           $set: {
             hide: true
