@@ -173,6 +173,10 @@ export default {
       type: 'boolean',
       default: false
     },
+    createdOffline: {
+      type: 'boolean',
+      default: false
+    },
     metaData: {
       type: 'object'
     },

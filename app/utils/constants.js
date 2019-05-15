@@ -44,7 +44,7 @@ export const momentAdd = (day, time) => {
   return formattedDay;
 };
 
-export const filterIntoSchema = (dbEvent, type, owner) => {
+export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
   const schemaCastedDbObject = {};
   switch (type) {
     case GOOGLE:
@@ -169,8 +169,11 @@ export const filterIntoSchema = (dbEvent, type, owner) => {
 
         Talk to shuhao tmr, and ask how you think we should deal with this case.
       */
-      schemaCastedDbObject.id = md5(dbEvent.Id.UniqueId);
-      schemaCastedDbObject.originalId = dbEvent.Id.UniqueId;
+      schemaCastedDbObject.id = md5(
+        dbEvent.Id === null ? id : dbEvent.Id.UniqueId
+      );
+      schemaCastedDbObject.originalId =
+        dbEvent.Id === null ? id : dbEvent.Id.UniqueId;
       schemaCastedDbObject.start = {
         dateTime: dbEvent.Start.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ')
       };
@@ -182,7 +185,7 @@ export const filterIntoSchema = (dbEvent, type, owner) => {
       schemaCastedDbObject.providerType = EXCHANGE;
       schemaCastedDbObject.summary = dbEvent.Subject;
       schemaCastedDbObject.incomplete = false;
-      schemaCastedDbObject.local = true;
+      schemaCastedDbObject.local = local;
       schemaCastedDbObject.hide = false;
       // console.log("here4");
 

@@ -163,12 +163,27 @@ export default class EditEvent extends React.Component {
           );
 
           const db = await getDb();
-          await db.pendingactions.upsert({
-            uniqueId: uniqid(),
-            eventId: state.id,
-            status: 'pending',
-            type: 'update'
-          });
+          // Check if a pending action currently exist for the current item.
+          const pendingDoc = db.pendingactions
+            .find()
+            .where('eventId')
+            .eq(state.id);
+          const result = await pendingDoc.exec();
+          if (result.length === 0) {
+            await db.pendingactions.upsert({
+              uniqueId: uniqid(),
+              eventId: state.id,
+              status: 'pending',
+              type: 'update'
+            });
+          }
+          // else if (result.length === 1) {
+          //   if (result[0].type === 'create') {
+          //     // I need to ignore, and not update.
+          //   }
+          // } else {
+          //   console.log('Why do I have so many multiple pending actions?!?!');
+          // }
           const updateDoc = db.events
             .find()
             .where('originalId')
@@ -177,7 +192,8 @@ export default class EditEvent extends React.Component {
           await updateDoc.update({
             $set: {
               summary: state.title,
-              location: state.place.name
+              location: state.place.name,
+              local: true
             }
           });
           // console.log(updateDoc.summary);

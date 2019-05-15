@@ -8,10 +8,11 @@ import {
   startWith,
   switchMap,
   delay,
-  concatMap
+  concatMap,
+  exhaustMap
 } from 'rxjs/operators';
 import { ofType } from 'redux-observable';
-import { from, iif, of, timer, interval } from 'rxjs';
+import { from, iif, of, timer, interval, throwError } from 'rxjs';
 import { normalize, schema } from 'normalizr';
 import { Client } from '@microsoft/microsoft-graph-client';
 import * as RxDB from 'rxdb';
@@ -31,6 +32,8 @@ import {
 import moment from 'moment';
 import _ from 'lodash';
 import { fromPromise } from 'rxjs/internal-compatibility';
+import uniqid from 'uniqid';
+import { take } from 'rxjs-compat/operator/take';
 import {
   duplicateAction,
   syncStoredEvents,
@@ -58,7 +61,8 @@ import {
   findSingleEventById,
   updateEvent,
   asyncDeleteSingleEventById,
-  exchangeDeleteEvent
+  exchangeDeleteEvent,
+  createEvent
 } from '../utils/client/exchange';
 import {
   GET_EVENTS_BEGIN,
@@ -243,14 +247,48 @@ const postEventsExchange = payload =>
             Providers.filterIntoSchema(
               item,
               Providers.EXCHANGE,
-              payload.auth.email
+              payload.auth.email,
+              false
             )
           );
           resolve(item);
         },
-        error => reject(error)
+        async error => {
+          console.log(
+            'Error creating event, pushing to pending action table.',
+            error
+          );
+
+          const db = await getDb();
+          const obj = {
+            uniqueId: uniqid(),
+            eventId: uniqid(),
+            status: 'pending',
+            type: 'create'
+          };
+          console.log(obj);
+          console.log(newEvent);
+
+          const savedObj = Providers.filterIntoSchema(
+            newEvent,
+            Providers.EXCHANGE,
+            payload.auth.email,
+            true,
+            obj.eventId
+          );
+          savedObj.createdOffline = true;
+          console.log(savedObj);
+          await db.events.upsert(savedObj);
+          console.log('here??');
+
+          await db.pendingactions.upsert(obj);
+          throw error;
+        }
       )
-      .catch(error => console.log(error));
+      .catch(error => {
+        console.log('here?', error);
+        return throwError(error);
+      });
   });
 
 const deleteEvent = async id => {
@@ -403,6 +441,39 @@ export const clearAllEventsEpics = action$ =>
 //     )
 //   );
 
+// export const testingEpics = action$ => {
+//   // Stop upon a end pending action trigger, for debugging/stopping if needed
+//   const stopPolling$ = action$.pipe(ofType(END_PENDING_ACTIONS));
+//   return action$.pipe(
+//     // On begin pending actions
+//     ofType(BEGIN_PENDING_ACTIONS),
+//     switchMap(action =>
+//       // At a 5 second interval
+//       timer(3 * 1000, 5 * 1000).pipe(
+//         // Stop when epics see a end pending action
+//         takeUntil(stopPolling$),
+//         concatMap(() =>
+//           // Get the db
+//           from(getDb()).pipe(
+//             exhaustMap(db => {
+//               console.log('Run again!!');
+//               return from(
+//                 new Promise(resolve => setTimeout(resolve, 10000))
+//               ).pipe(
+//                 // what happens if action is still running but no internet?
+//                 // delay(9.9 * 1000),
+//                 // actions is an array from the db
+//                 // switchmap at top is reason for it, handle for future. lol
+//                 map(actions => console.log('Hello world'))
+//               );
+//             })
+//           )
+//         )
+//       )
+//     )
+//   );
+// };
+
 export const createCaldavAccountEpics = action$ =>
   action$.pipe(
     ofType(CalDavActionCreators.RESET_CALDAV_ACCOUNT),
@@ -491,7 +562,8 @@ const syncEvents = async action => {
           const filteredEvent = Providers.filterIntoSchema(
             appt,
             Providers.EXCHANGE,
-            user.email
+            user.email,
+            false
           );
 
           if (dbObj.length === 0) {
@@ -519,15 +591,13 @@ const syncEvents = async action => {
           const result = appts.find(
             appt => appt.Id.UniqueId === dbEvent.originalId
           );
-          if (result !== undefined) {
+          // Means we found something, move on to next object.
+          if (result !== undefined || dbEvent.createdOffline === true) {
             continue;
           }
-          // console.log(
-          //   'Found a event deleted remotely, but not locally',
-          //   dbEvent
-          // );
+          console.log('Found a event not on server, but is local', dbEvent);
 
-          // Means not found, delete it.
+          // Means not found, delete it if it is not a new object.
           updatedEvents.push({
             event: Providers.filterEventIntoSchema(dbEvent),
             type: 'delete'
@@ -538,6 +608,7 @@ const syncEvents = async action => {
             .where('originalId')
             .eq(dbEvent.originalId);
           listOfPriomises.push(query.remove());
+
           // if (idSet.has(dbEvent.originalId)) {
           //   continue;
           // }
@@ -575,10 +646,11 @@ export const pendingActionsEpics = action$ => {
       interval(5 * 1000).pipe(
         // Stop when epics see a end pending action
         takeUntil(stopPolling$),
-        switchMap(() =>
+        concatMap(() =>
           // Get the db
           from(getDb()).pipe(
-            mergeMap(db =>
+            exhaustMap(db =>
+              // console.log('Run again!!');
               // Get all the pending actions
               from(db.pendingactions.find().exec()).pipe(
                 // what happens if action is still running but no internet?
@@ -586,6 +658,7 @@ export const pendingActionsEpics = action$ => {
                 // actions is an array from the db
                 // switchmap at top is reason for it, handle for future. lol
                 mergeMap(actions =>
+                  // console.log('here123');
                   from(handlePendingActions(action.payload, actions, db)).pipe(
                     mergeMap(result => of(...result))
                   )
@@ -615,6 +688,8 @@ const handlePendingActions = async (users, actions, db) => {
 
     let serverObj;
 
+    console.log(rxDbObj, action);
+
     try {
       switch (rxDbObj.providerType) {
         case Providers.GOOGLE:
@@ -622,12 +697,14 @@ const handlePendingActions = async (users, actions, db) => {
         case Providers.OUTLOOK:
           break;
         case Providers.EXCHANGE:
-          serverObj = await findSingleEventById(
-            user.email,
-            user.password,
-            'https://outlook.office365.com/Ews/Exchange.asmx',
-            rxDbObj.originalId
-          );
+          if (action.type !== 'create') {
+            serverObj = await findSingleEventById(
+              user.email,
+              user.password,
+              'https://outlook.office365.com/Ews/Exchange.asmx',
+              rxDbObj.originalId
+            );
+          }
           break;
         default:
           return apiFailure('Unhandled provider for Pending actions');
@@ -645,7 +722,9 @@ const handlePendingActions = async (users, actions, db) => {
       // Just remove it from database instead, and break;
       // This is when the item has been deleted on server, but not local due to sync.
       // Error is thrown by findSingleeventById
+      console.log(error);
       if (error.ErrorCode === 249) {
+        console.log('removing action', action);
         await action.remove();
       }
       throw error;
@@ -687,11 +766,56 @@ const handlePendingActions = async (users, actions, db) => {
 };
 
 const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
-  // console.log(localObj, serverObj, localObj.local);
+  console.log(localObj, serverObj, localObj.local);
+  let result = '';
+
+  if (type === 'create') {
+    switch (localObj.providerType) {
+      case Providers.GOOGLE:
+        break;
+      case Providers.OUTLOOK:
+        break;
+      case Providers.EXCHANGE:
+        console.log('here');
+        result = await createEvent(
+          user.email,
+          user.password,
+          'https://outlook.office365.com/Ews/Exchange.asmx',
+          localObj
+        );
+        console.log(result);
+        break;
+      default:
+        console.log('(Handle Merge Events) Provider not accounted for');
+        break;
+    }
+
+    if (result.type === 'POST_EVENT_SUCCESS') {
+      const query = db.pendingactions
+        .find()
+        .where('eventId')
+        .eq(localObj.originalId);
+      await query.remove();
+
+      const removeFromEvents = db.events
+        .find()
+        .where('originalId')
+        .eq(localObj.originalId);
+      await removeFromEvents.remove();
+
+      const actions = await db.pendingactions.find().exec();
+      console.log(actions);
+
+      return result;
+    }
+    // Got error, wtf to do?
+  }
+
   const filteredServerObj = Providers.filterIntoSchema(
     serverObj,
     localObj.providerType,
-    localObj.owner
+    localObj.owner,
+    false
   );
   const localUpdatedTime = moment(localObj.updated);
   const serverUpdatedTime = moment(filteredServerObj.updated);
@@ -699,11 +823,9 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
   const dateIsAfter = localUpdatedTime.isAfter(serverUpdatedTime);
   const dateIsBefore = localUpdatedTime.isBefore(serverUpdatedTime);
 
-  let result;
-
   if (localObj.local) {
     const dateIsSame = localUpdatedTime.isSame(serverUpdatedTime);
-    // console.log(`Date is Same: ${dateIsSame}`);
+    console.log(`Date is Same: ${dateIsSame}`);
 
     if (dateIsSame) {
       // Take local
@@ -790,6 +912,14 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
   } else {
     // Keep server
     db.events.upsert(filteredServerObj);
+
+    const query = db.pendingactions
+      .find()
+      .where('eventId')
+      .eq(filteredServerObj.originalId);
+    await query.remove();
+
+    return editEventSuccess(serverObj);
   }
 };
 // ------------------------------------ PENDING ACTIONS ------------------------------------ //

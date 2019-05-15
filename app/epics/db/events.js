@@ -115,7 +115,8 @@ const storeEvents = async payload => {
     const filteredEvent = Providers.filterIntoSchema(
       dbEvent,
       payload.providerType,
-      payload.owner
+      payload.owner,
+      false
     );
     filteredEvent.providerType = payload.providerType;
     try {
@@ -142,6 +143,8 @@ const deleteEvent = async id => {
   if (datas.length !== 1) {
     console.error('Omg, actually a collision?');
   }
+  const data = datas[0];
+
   const users = await db.persons
     .find()
     .where('providerType')
@@ -154,8 +157,25 @@ const deleteEvent = async id => {
     console.error('Omg, actually a collision?');
   }
 
-  const data = datas[0];
   const user = users[0];
+
+  console.log(data);
+  // Edge case, means user created an event offline, and is yet to upload it to service.
+  // In that case, we shuld remove it from pending action if it exists.
+  if (data.local === true) {
+    const pendingactionRemoval = db.pendingactions
+      .find()
+      .where('eventId')
+      .eq(data.originalId);
+
+    await pendingactionRemoval.remove();
+    await query.remove();
+
+    return {
+      providerType: data.providerType,
+      user: Providers.filterUsersIntoSchema(user)
+    };
+  }
 
   switch (data.providerType) {
     case Providers.GOOGLE:
@@ -205,7 +225,8 @@ const deleteEvent = async id => {
         });
         await deleteDoc.update({
           $set: {
-            hide: true
+            hide: true,
+            local: true
           }
         });
       }

@@ -27,7 +27,8 @@ import getDb from '../../db';
 import {
   deleteEventSuccess,
   editEventSuccess,
-  apiFailure
+  apiFailure,
+  postEventSuccess
 } from '../../actions/events';
 
 export const filterExchangeUser = jsonObj => ({
@@ -112,38 +113,50 @@ export const getAllEvents = (username, password, url) =>
   asyncExchangeRequest(username, password, url);
 
 export const createEvent = async (username, password, url, payload) => {
-  const exch = new ExchangeService();
-  exch.Url = new Uri(url);
-  exch.Credentials = new ExchangeCredentials(username, password);
+  try {
+    const exch = new ExchangeService();
+    exch.Url = new Uri(url);
+    exch.Credentials = new ExchangeCredentials(username, password);
 
-  const newEvent = new Appointment(exch);
+    const newEvent = new Appointment(exch);
 
-  newEvent.Subject = payload.summary;
-  newEvent.Body = new MessageBody('');
-  newEvent.Start = new DateTime(
-    moment.tz(payload.start.dateTime, payload.start.timezone)
-  );
-  newEvent.End = new DateTime(
-    moment.tz(payload.end.dateTime, payload.end.timezone)
-  );
-  newEvent
-    .Save(
-      WellKnownFolderName.Calendar,
-      SendInvitationsMode.SendToAllAndSaveCopy
-    )
-    .then(
-      async () => {
-        const db = await getDb();
-        const doc = await db.events.upsert(
-          ProviderTypes.filterIntoSchema(
-            newEvent,
-            ProviderTypes.EXCHANGE,
-            username
-          )
-        );
-      },
-      error => console.log(error)
+    newEvent.Subject = payload.summary;
+    newEvent.Body = new MessageBody('');
+    newEvent.Start = new DateTime(
+      moment.tz(payload.start.dateTime, payload.start.timezone)
     );
+    newEvent.End = new DateTime(
+      moment.tz(payload.end.dateTime, payload.end.timezone)
+    );
+    return await newEvent
+      .Save(
+        WellKnownFolderName.Calendar,
+        SendInvitationsMode.SendToAllAndSaveCopy
+      )
+      .then(
+        async () => {
+          const item = await Item.Bind(exch, newEvent.Id);
+          console.log('New Exchange Event Re-Get: ', item);
+
+          const db = await getDb();
+          const doc = await db.events.upsert(
+            ProviderTypes.filterIntoSchema(
+              item,
+              ProviderTypes.EXCHANGE,
+              username,
+              false
+            )
+          );
+          return postEventSuccess([item], 'EXCHANGE', username);
+        },
+        error => {
+          throw error;
+        }
+      );
+  } catch (error) {
+    console.log('(createEvent) Error: ', error);
+    throw error;
+  }
 };
 
 export const updateEvent = async (singleAppointment, user, callback) => {
@@ -166,7 +179,8 @@ export const updateEvent = async (singleAppointment, user, callback) => {
             ProviderTypes.filterIntoSchema(
               updatedItem,
               ProviderTypes.EXCHANGE,
-              user.email
+              user.email,
+              false
             )
           );
           const data = await db.events.find().exec();
