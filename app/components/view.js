@@ -92,6 +92,10 @@ export default class View extends React.Component {
 
     exch.Credentials = new ExchangeCredentials(userName, password);
 
+    const { props } = this;
+
+    props.beginPendingActions(props.providers);
+
     // try {
     //   var id = new FolderId(WellKnownFolderName.Calendar, new Mailbox(userName));
     //   let targetFolder = Folder.Bind(exch, id).then(
@@ -218,7 +222,6 @@ export default class View extends React.Component {
       // });
     */
 
-    const { props } = this;
     const db = await getDb();
 
     // const eventsz = await db.events.find().exec();

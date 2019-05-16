@@ -36,12 +36,15 @@ export const retrieveEventsEpic = action$ =>
       from(getDb()).pipe(
         mergeMap(db =>
           from(db.events.find().exec()).pipe(
-            map(events =>
-              events.filter(
+            map(events => {
+              console.log(
+                events.map(obj => Providers.filterEventIntoSchema(obj))
+              );
+              return events.filter(
                 singleEvent =>
                   singleEvent.providerType === action.payload.providerType
-              )
-            ),
+              );
+            }),
             map(events =>
               events.map(singleEvent => ({
                 id: singleEvent.id,

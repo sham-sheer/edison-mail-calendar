@@ -137,16 +137,40 @@ export const createEvent = async (username, password, url, payload) => {
         async () => {
           const item = await Item.Bind(exch, newEvent.Id);
           console.log('New Exchange Event Re-Get: ', item);
+          const filteredItem = ProviderTypes.filterIntoSchema(
+            item,
+            ProviderTypes.EXCHANGE,
+            username,
+            false
+          );
+          filteredItem.createdOffline = true;
+          console.log('hello0');
 
           const db = await getDb();
-          const doc = await db.events.upsert(
-            ProviderTypes.filterIntoSchema(
-              item,
-              ProviderTypes.EXCHANGE,
-              username,
-              false
-            )
-          );
+          // const doc = await db.events.upsert(filteredItem);
+
+          // console.log('hello1', newEvent.Id);
+
+          const eventDoc = db.events
+            .find()
+            .where('originalId')
+            .eq(newEvent.Id.UniqueId);
+          // console.log('hello2', eventDoc);
+          const temp = await db.events.find().exec();
+          // console.log('hello3', temp);
+          const result = await eventDoc.exec();
+          // console.log(result);
+
+          if (result.length === 0) {
+            db.events.upsert(filteredItem);
+          } else if (result.length === 1) {
+            await eventDoc.update({
+              $set: filteredItem
+            });
+          } else {
+            console.log('we should really not be here', result);
+          }
+
           return postEventSuccess([item], 'EXCHANGE', username);
         },
         error => {

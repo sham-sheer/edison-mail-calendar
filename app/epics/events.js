@@ -259,6 +259,7 @@ const postEventsExchange = payload =>
             error
           );
 
+          // Creating a temp object with uniqueid due to not having any internet, retry w/ pending action
           const db = await getDb();
           const obj = {
             uniqueId: uniqid(),
@@ -591,7 +592,7 @@ const syncEvents = async action => {
           const result = appts.find(
             appt => appt.Id.UniqueId === dbEvent.originalId
           );
-          // Means we found something, move on to next object.
+          // Means we found something, move on to next object or it has not been uploaded to the server yet.
           if (result !== undefined || dbEvent.createdOffline === true) {
             continue;
           }
@@ -791,12 +792,14 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
     }
 
     if (result.type === 'POST_EVENT_SUCCESS') {
+      // Remove the pending action first
       const query = db.pendingactions
         .find()
         .where('eventId')
         .eq(localObj.originalId);
       await query.remove();
 
+      // Remove the temp event if it exists. For newly created events.
       const removeFromEvents = db.events
         .find()
         .where('originalId')
