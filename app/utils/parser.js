@@ -266,15 +266,10 @@ const expandRecurEvents = async results => {
   );
   let merged = nonMTDresults;
   const finalResults = recurringEvents.map(async recurMasterEvent => {
-    // const recurPatternOriginalIds = await db.recurrencepatterns
-    //   .find()
-    //   .where('originalId')
-    //   .eq(recurMasterEvent.originalId)
-    //   .exec();
     const recurPatternRecurId = await db.recurrencepatterns
       .find()
-      .where('recurringTypeId')
-      .eq(recurMasterEvent.start.dateTime)
+      .where('originalId')
+      .eq(recurMasterEvent.originalId)
       .exec();
     const recurTemp = parseRecurrence(
       recurPatternRecurId[0].toJSON(),
@@ -289,6 +284,7 @@ const expandRecurEvents = async results => {
 };
 
 const parseRecurrence = (pattern, recurMasterEvent) => {
+  debugger;
   const recurEvents = [];
   const ruleSet = buildRuleSet(pattern, recurMasterEvent);
   const recurDates = ruleSet.all().map(date => date.toJSON());
