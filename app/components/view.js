@@ -226,8 +226,8 @@ export default class View extends React.Component {
 
     // const eventsz = await db.events.find().exec();
     // console.log(eventsz);
-    const actions = await db.pendingactions.find().exec();
-    console.log(actions);
+    // const actions = await db.pendingactions.find().exec();
+    // console.log(actions);
 
     db.persons
       .find()

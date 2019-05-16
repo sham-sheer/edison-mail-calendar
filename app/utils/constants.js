@@ -187,7 +187,6 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
       schemaCastedDbObject.incomplete = false;
       schemaCastedDbObject.local = local;
       schemaCastedDbObject.hide = false;
-      // console.log("here4");
 
       [
         {

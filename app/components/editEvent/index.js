@@ -177,13 +177,7 @@ export default class EditEvent extends React.Component {
               type: 'update'
             });
           }
-          // else if (result.length === 1) {
-          //   if (result[0].type === 'create') {
-          //     // I need to ignore, and not update.
-          //   }
-          // } else {
-          //   console.log('Why do I have so many multiple pending actions?!?!');
-          // }
+
           const updateDoc = db.events
             .find()
             .where('originalId')
@@ -196,7 +190,6 @@ export default class EditEvent extends React.Component {
               local: true
             }
           });
-          // console.log(updateDoc.summary);
           props.history.push('/');
         }
         break;

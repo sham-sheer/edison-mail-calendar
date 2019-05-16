@@ -36,15 +36,12 @@ export const retrieveEventsEpic = action$ =>
       from(getDb()).pipe(
         mergeMap(db =>
           from(db.events.find().exec()).pipe(
-            map(events => {
-              console.log(
-                events.map(obj => Providers.filterEventIntoSchema(obj))
-              );
-              return events.filter(
+            map(events =>
+              events.filter(
                 singleEvent =>
                   singleEvent.providerType === action.payload.providerType
-              );
-            }),
+              )
+            ),
             map(events =>
               events.map(singleEvent => ({
                 id: singleEvent.id,
@@ -70,16 +67,12 @@ export const retrieveEventsEpic = action$ =>
 export const storeEventsEpic = action$ =>
   action$.pipe(
     ofType(BEGIN_STORE_EVENTS),
-    mergeMap(action => {
-      console.log('here?');
-      return from(storeEvents(action.payload)).pipe(
-        map(results => {
-          console.log(results);
-          return successStoringEvents(results);
-        }),
+    mergeMap(action =>
+      from(storeEvents(action.payload)).pipe(
+        map(results => successStoringEvents(results)),
         catchError(error => failStoringEvents(error))
-      );
-    })
+      )
+    )
   );
 
 export const beginStoreEventsEpic = action$ =>
@@ -93,8 +86,6 @@ export const deleteEventEpics = action$ =>
     ofType(DELETE_EVENT_BEGIN),
     mergeMap(action =>
       from(deleteEvent(action.payload)).pipe(
-        // map(results => deleteEventSuccess(results)),
-        // catchError(error => failStoringEvents(error))
         map(resp => retrieveStoreEvents(resp.providerType, resp.user))
       )
     )
@@ -105,7 +96,7 @@ const storeEvents = async payload => {
   const addedEvents = [];
   const dbUpsertPromises = [];
   const { data } = payload;
-  // console.log(payload);
+
   for (const dbEvent of data) {
     // #TO-DO, we need to figure out how to handle recurrence, for now, we ignore
     if (
@@ -162,7 +153,8 @@ const deleteEvent = async id => {
 
   const user = users[0];
 
-  console.log(data);
+  // console.log(data);
+
   // Edge case, means user created an event offline, and is yet to upload it to service.
   // In that case, we shuld remove it from pending action if it exists.
   if (data.local === true) {
@@ -201,7 +193,6 @@ const deleteEvent = async id => {
           'https://outlook.office365.com/Ews/Exchange.asmx',
           data.get('originalId')
         );
-        // console.log('Object to delete: ', singleAppointment);
 
         await exchangeDeleteEvent(singleAppointment, user, () => {
           // console.log('(Exchange) First attempt delete success!');
@@ -209,7 +200,7 @@ const deleteEvent = async id => {
 
         await deleteDoc.remove();
       } catch (error) {
-        console.log('Error, retrying with pending action!', error);
+        // console.log('Error, retrying with pending action!', error);
 
         // This means item has been deleted on server, maybe by another user
         // Handle this differently.

@@ -136,7 +136,6 @@ export const createEvent = async (username, password, url, payload) => {
       .then(
         async () => {
           const item = await Item.Bind(exch, newEvent.Id);
-          console.log('New Exchange Event Re-Get: ', item);
           const filteredItem = ProviderTypes.filterIntoSchema(
             item,
             ProviderTypes.EXCHANGE,
@@ -144,22 +143,13 @@ export const createEvent = async (username, password, url, payload) => {
             false
           );
           filteredItem.createdOffline = true;
-          console.log('hello0');
-
           const db = await getDb();
-          // const doc = await db.events.upsert(filteredItem);
-
-          // console.log('hello1', newEvent.Id);
-
           const eventDoc = db.events
             .find()
             .where('originalId')
             .eq(newEvent.Id.UniqueId);
-          // console.log('hello2', eventDoc);
           const temp = await db.events.find().exec();
-          // console.log('hello3', temp);
           const result = await eventDoc.exec();
-          // console.log(result);
 
           if (result.length === 0) {
             db.events.upsert(filteredItem);
@@ -212,7 +202,6 @@ export const updateEvent = async (singleAppointment, user, callback) => {
           return editEventSuccess(updatedItem);
         },
         error => {
-          // console.log('error:', error);
           throw error;
         }
       );
@@ -265,8 +254,8 @@ export const exchangeDeleteEvent = async (
           .eq(singleAppointment.Id.UniqueId);
         await query.remove();
         const data = await db.events.find().exec();
-        console.log(data);
-        console.log(DateTime.Now, DateTime.UtcNow);
+        // console.log(data);
+        // console.log(DateTime.Now, DateTime.UtcNow);
         callback();
         return deleteEventSuccess(singleAppointment.Id.UniqueId, user);
       },

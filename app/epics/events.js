@@ -227,7 +227,7 @@ const postEventsExchange = payload =>
     newEvent.End = new DateTime(
       moment.tz(payload.data.end.dateTime, payload.data.end.timezone)
     );
-    console.log('New Exchange Event!!', newEvent);
+    // console.log('New Exchange Event!!', newEvent);
     newEvent
       .Save(
         WellKnownFolderName.Calendar,
@@ -240,7 +240,7 @@ const postEventsExchange = payload =>
             newEvent.Id
             // new PropertySet(ItemSchema.Subject)
           );
-          console.log('New Exchange Event Re-Get: ', item);
+          // console.log('New Exchange Event Re-Get: ', item);
 
           const db = await getDb();
           await db.events.upsert(
@@ -254,10 +254,10 @@ const postEventsExchange = payload =>
           resolve(item);
         },
         async error => {
-          console.log(
-            'Error creating event, pushing to pending action table.',
-            error
-          );
+          // console.log(
+          //   'Error creating event, pushing to pending action table.',
+          //   error
+          // );
 
           // Creating a temp object with uniqueid due to not having any internet, retry w/ pending action
           const db = await getDb();
@@ -267,8 +267,8 @@ const postEventsExchange = payload =>
             status: 'pending',
             type: 'create'
           };
-          console.log(obj);
-          console.log(newEvent);
+          // console.log(obj);
+          // console.log(newEvent);
 
           const savedObj = Providers.filterIntoSchema(
             newEvent,
@@ -278,18 +278,14 @@ const postEventsExchange = payload =>
             obj.eventId
           );
           savedObj.createdOffline = true;
-          console.log(savedObj);
-          await db.events.upsert(savedObj);
-          console.log('here??');
+          // console.log(savedObj);
 
+          await db.events.upsert(savedObj);
           await db.pendingactions.upsert(obj);
           throw error;
         }
       )
-      .catch(error => {
-        console.log('here?', error);
-        return throwError(error);
-      });
+      .catch(error => throwError(error));
   });
 
 const deleteEvent = async id => {
@@ -504,21 +500,6 @@ export const pollingEventsEpics = action$ => {
       interval(10 * 1000).pipe(
         takeUntil(stopPolling$),
         switchMap(() => from(syncEvents(action))),
-        // map(events =>
-        //   events.map(singleEvent => ({
-        //     id: singleEvent.id,
-        //     end: singleEvent.end,
-        //     start: singleEvent.start,
-        //     summary: singleEvent.summary,
-        //     organizer: singleEvent.organizer,
-        //     recurrence: singleEvent.recurrence,
-        //     iCalUID: singleEvent.iCalUID,
-        //     attendees: singleEvent.attendees,
-        //     originalId: singleEvent.originalId,
-        //     owner: singleEvent.owner,
-        //     hide: singleEvent.hide
-        //   }))
-        // ),
         map(results => syncStoredEvents(results))
       )
     )
@@ -545,16 +526,11 @@ const syncEvents = async action => {
         const updatedEvents = [];
         const listOfPriomises = [];
 
-        // const idSet = new Set();
-
         // console.log(appts);
-
         for (const appt of appts) {
           if (appt.IsRecurring) {
             continue;
           }
-
-          // idSet.add(appt.Id.UniqueId);
 
           const dbObj = dbEvents.filter(
             dbEvent => dbEvent.originalId === appt.Id.UniqueId
@@ -609,23 +585,10 @@ const syncEvents = async action => {
             .where('originalId')
             .eq(dbEvent.originalId);
           listOfPriomises.push(query.remove());
-
-          // if (idSet.has(dbEvent.originalId)) {
-          //   continue;
-          // }
-
-          // Deal with the specific event that could be deleted.
-          // If the code comes here, it means we found an event that is
-          // 1. Not in the appointment array from the server
-          // 2. Not in the set
-          // This means, It is not a new event and is not on the server, aka, deleted.
-          // updatedEvents.push(filteredEvent);
         }
-        // console.log('here?!');
         await Promise.all(listOfPriomises);
         return updatedEvents;
       } catch (error) {
-        // console.log(error);
         // Return empty array, let next loop handle syncing.
         return [];
       }
@@ -659,7 +622,6 @@ export const pendingActionsEpics = action$ => {
                 // actions is an array from the db
                 // switchmap at top is reason for it, handle for future. lol
                 mergeMap(actions =>
-                  // console.log('here123');
                   from(handlePendingActions(action.payload, actions, db)).pipe(
                     mergeMap(result => of(...result))
                   )
@@ -678,9 +640,6 @@ const reflect = p =>
 
 const handlePendingActions = async (users, actions, db) => {
   const docs = await db.events.find().exec();
-  // console.log(users, actions);
-  // console.log(docs);
-
   const promisesArr = actions.map(async action => {
     const rxDbObj = docs.filter(obj => obj.originalId === action.eventId)[0];
     const user = users[rxDbObj.providerType].filter(
@@ -689,7 +648,7 @@ const handlePendingActions = async (users, actions, db) => {
 
     let serverObj;
 
-    console.log(rxDbObj, action);
+    // console.log(rxDbObj, action);
 
     try {
       switch (rxDbObj.providerType) {
@@ -723,7 +682,7 @@ const handlePendingActions = async (users, actions, db) => {
       // Just remove it from database instead, and break;
       // This is when the item has been deleted on server, but not local due to sync.
       // Error is thrown by findSingleeventById
-      console.log(error);
+      // console.log(error);
       if (error.ErrorCode === 249) {
         console.log('removing action', action);
         await action.remove();
@@ -767,7 +726,7 @@ const handlePendingActions = async (users, actions, db) => {
 };
 
 const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
-  console.log(localObj, serverObj, localObj.local);
+  // console.log(localObj, serverObj, localObj.local);
   let result = '';
 
   if (type === 'create') {
@@ -777,14 +736,12 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
       case Providers.OUTLOOK:
         break;
       case Providers.EXCHANGE:
-        console.log('here');
         result = await createEvent(
           user.email,
           user.password,
           'https://outlook.office365.com/Ews/Exchange.asmx',
           localObj
         );
-        console.log(result);
         break;
       default:
         console.log('(Handle Merge Events) Provider not accounted for');
@@ -806,9 +763,6 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
         .eq(localObj.originalId);
       await removeFromEvents.remove();
 
-      const actions = await db.pendingactions.find().exec();
-      console.log(actions);
-
       return result;
     }
     // Got error, wtf to do?
@@ -828,7 +782,7 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
 
   if (localObj.local) {
     const dateIsSame = localUpdatedTime.isSame(serverUpdatedTime);
-    console.log(`Date is Same: ${dateIsSame}`);
+    // console.log(`Date is Same: ${dateIsSame}`);
 
     if (dateIsSame) {
       // Take local
@@ -877,7 +831,7 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
               // console.log(localObj, serverObj, db, type);
 
               result = await exchangeDeleteEvent(serverObj, user, () => {
-                // console.log('deleted exchange event');
+                console.log('deleted exchange event');
               });
 
               if (result.type === 'DELETE_EVENT_SUCCESS') {
@@ -898,9 +852,9 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
           break;
       }
     } else if (dateIsBefore) {
-      console.log(
-        'Handle merging here, but for now, discard all pending actions and keep server'
-      );
+      // console.log(
+      //   'Handle merging here, but for now, discard all pending actions and keep server'
+      // );
 
       // Keep server
       await db.events.upsert(filteredServerObj);
