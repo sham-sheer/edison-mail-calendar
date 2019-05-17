@@ -185,6 +185,12 @@ export default {
     },
     isModifiedThenDeleted: {
       type: 'boolean'
+    },
+    caldavUrl: {
+      type: 'string'
+    },
+    etag: {
+      type: 'string'
     }
   },
   required: ['end', 'start']

@@ -80,7 +80,7 @@ const parseEvents = (events, calendarId, creator) => {
     if (calevent.calendarData !== undefined) {
       const jcalData = ICAL.parse(calevent.calendarData);
       const ics = calevent.data.href;
-      const { etag } = calevent;
+      const { etag, url } = calevent;
       let mtd = false;
       if (jcalData.length > 0) {
         const comp = new ICAL.Component(jcalData);
@@ -140,7 +140,9 @@ const parseEvents = (events, calendarId, creator) => {
             ICALEvent.isRecurring(),
             calendarId,
             creator,
-            mtd
+            mtd,
+            etag,
+            url
           );
           parsedEvents.push({
             ics,
@@ -160,7 +162,9 @@ const parseEvents = (events, calendarId, creator) => {
               ICALEvent.isRecurring(),
               calendarId,
               creator,
-              mtd
+              mtd,
+              etag,
+              url
             );
             parsedEvents.push({
               ics,
@@ -200,7 +204,9 @@ const parseICALEvent = (
   isRecurring,
   calendarId,
   creator,
-  mtd
+  mtd,
+  etag,
+  url
 ) => {
   const dtstart = vevent.getFirstPropertyValue('dtstart');
   const dtend = vevent.getFirstPropertyValue('dtend');
@@ -242,7 +248,9 @@ const parseICALEvent = (
     calendarId,
     providerType: 'caldav',
     isRecurring,
-    isModifiedThenDeleted: mtd
+    isModifiedThenDeleted: mtd,
+    etag,
+    caldavUrl: url
   };
 };
 
@@ -266,15 +274,10 @@ const expandRecurEvents = async results => {
   );
   let merged = nonMTDresults;
   const finalResults = recurringEvents.map(async recurMasterEvent => {
-    // const recurPatternOriginalIds = await db.recurrencepatterns
-    //   .find()
-    //   .where('originalId')
-    //   .eq(recurMasterEvent.originalId)
-    //   .exec();
     const recurPatternRecurId = await db.recurrencepatterns
       .find()
-      .where('recurringTypeId')
-      .eq(recurMasterEvent.start.dateTime)
+      .where('originalId')
+      .eq(recurMasterEvent.originalId)
       .exec();
     const recurTemp = parseRecurrence(
       recurPatternRecurId[0].toJSON(),
@@ -289,6 +292,7 @@ const expandRecurEvents = async results => {
 };
 
 const parseRecurrence = (pattern, recurMasterEvent) => {
+  // debugger;
   const recurEvents = [];
   const ruleSet = buildRuleSet(pattern, recurMasterEvent);
   const recurDates = ruleSet.all().map(date => date.toJSON());

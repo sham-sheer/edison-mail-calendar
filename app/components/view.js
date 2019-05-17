@@ -406,6 +406,7 @@ export default class View extends React.Component {
     const { props } = this;
     const { state } = this;
     props.beginDeleteEvent(state.currentEvent.id);
+    // props.beginDeleteCalendarObject(state.currentEvent);
     this.closeModal();
   };
 

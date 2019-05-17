@@ -22,7 +22,7 @@ const getFilteredEvents = createSelector(
         }
 
         return {
-          id: uniqid(),
+          id: eachEvent.id,
           title: eachEvent.summary,
           end: new Date(moment(eachEvent.end.date).format()),
           start: new Date(moment(eachEvent.start.date).format())

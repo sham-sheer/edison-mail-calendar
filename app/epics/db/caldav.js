@@ -1,6 +1,6 @@
 import { map, switchMap, catchError } from 'rxjs/operators';
 import { ofType } from 'redux-observable';
-import { of, from } from 'rxjs';
+import { of, from, merge } from 'rxjs';
 import { RRule, RRuleSet, rrulestr } from 'rrule';
 import moment from 'moment';
 import * as CalDavDbActionCreators from '../../actions/db/caldav';
@@ -43,9 +43,13 @@ export const retrieveCaldavEventsEpic = action$ =>
             // map(events => updateStoredEvents(events))
             switchMap(results =>
               from(PARSER.expandRecurEvents(results)).pipe(
-                switchMap(result =>
-                  from(result[0]).pipe(
-                    map(expandedEvents => updateStoredEvents(expandedEvents))
+                switchMap(resultPromises =>
+                  merge(resultPromises).pipe(
+                    switchMap(eventPromises =>
+                      from(eventPromises).pipe(
+                        map(events => updateStoredEvents(events))
+                      )
+                    )
                   )
                 )
               )

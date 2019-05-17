@@ -8,6 +8,7 @@ import * as CalDavActionCreators from '../actions/caldav';
 import * as CalDavDbActionCreators from '../actions/db/caldav';
 import getDb from '../db';
 import PARSER from '../utils/parser';
+import * as Credentials from '../utils/Credentials';
 
 const dav = require('dav');
 
@@ -60,11 +61,40 @@ export const deleteCalendarObjectEpics = action$ =>
   action$.pipe(
     ofType(CalDavActionCreators.BEGIN_DELETE_CALENDAR_OBJECT),
     switchMap(action =>
-      from(dav.deleteCalendarObject(action.payload)).pipe(
-        map(resp => CalDavActionCreators.successDeleteCalendarObject(resp)),
-        catchError(error =>
-          of(CalDavActionCreators.failDeleteCalendarObject(error))
-        )
+      from(removeEventFromDb(action.payload.id)).pipe(
+        switchMap(resp => {
+          const respJSON = resp[0].toJSON();
+          const calendarObject = {
+            etag: respJSON.etag,
+            url: respJSON.caldavUrl
+          };
+          const xhrObject = new dav.transport.Basic(
+            new dav.Credentials({
+              username: Credentials.ICLOUD_USERNAME,
+              password: Credentials.ICLOUD_PASSWORD
+            })
+          );
+          const option = {
+            xhr: xhrObject
+          };
+          return from(dav.deleteCalendarObject(calendarObject, option)).pipe(
+            map(res => CalDavActionCreators.successDeleteCalendarObject(res)),
+            catchError(error =>
+              of(CalDavActionCreators.failDeleteCalendarObject(error))
+            )
+          );
+        })
       )
     )
   );
+
+const removeEventFromDb = async eventId => {
+  const db = await getDb();
+  const eventQuery = db.events
+    .find()
+    .where('id')
+    .eq(eventId);
+  debugger;
+  const removedEvent = await eventQuery.remove();
+  return removedEvent;
+};
