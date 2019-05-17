@@ -25,14 +25,13 @@ class SearchBox extends Component {
     };
   }
 
-  onChange = e => {
+  onChange = (e) => {
     const { suggestions } = this.props;
     const userInput = e.currentTarget.value;
 
     // Filter our suggestions that don't contain the user's input
     const filteredSuggestions = suggestions.filter(
-      suggestion =>
-        suggestion.toLowerCase().indexOf(userInput.toLowerCase()) > -1
+      (suggestion) => suggestion.toLowerCase().indexOf(userInput.toLowerCase()) > -1
     );
 
     this.setState({
@@ -43,7 +42,7 @@ class SearchBox extends Component {
     });
   };
 
-  onClick = e => {
+  onClick = (e) => {
     this.setState({
       activeSuggestion: 0,
       filteredSuggestions: [],
@@ -52,7 +51,7 @@ class SearchBox extends Component {
     });
   };
 
-  onKeyDown = e => {
+  onKeyDown = (e) => {
     const { activeSuggestion, filteredSuggestions } = this.state;
     const { props, state } = this;
 
@@ -90,12 +89,7 @@ class SearchBox extends Component {
       onChange,
       onClick,
       onKeyDown,
-      state: {
-        activeSuggestion,
-        filteredSuggestions,
-        showSuggestions,
-        userInput
-      }
+      state: { activeSuggestion, filteredSuggestions, showSuggestions, userInput }
     } = this;
 
     let suggestionsListComponent;
@@ -131,12 +125,7 @@ class SearchBox extends Component {
 
     return (
       <Fragment>
-        <input
-          type="text"
-          onChange={onChange}
-          onKeyDown={onKeyDown}
-          value={userInput}
-        />
+        <input type="text" onChange={onChange} onKeyDown={onKeyDown} value={userInput} />
         {suggestionsListComponent}
       </Fragment>
     );

@@ -17,7 +17,7 @@ export const retrieveStoreEvents = (providerType, user) => ({
   payload: { providerType, user }
 });
 
-export const syncStoredEvents = resp => ({
+export const syncStoredEvents = (resp) => ({
   type: SYNC_STORED_EVENTS,
   payload: resp
 });
@@ -31,12 +31,12 @@ export const duplicateAction = () => ({
   type: DUPLICATE_ACTION
 });
 
-export const successStoringEvents = payload => ({
+export const successStoringEvents = (payload) => ({
   type: SUCCESS_STORED_EVENTS,
   payload
 });
 
-export const beginStoringEvents = payload => ({
+export const beginStoringEvents = (payload) => ({
   type: BEGIN_STORE_EVENTS,
   payload
 });

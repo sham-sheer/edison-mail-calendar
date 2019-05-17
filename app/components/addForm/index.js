@@ -16,7 +16,7 @@ const END_INDEX_OF_DATE = 11;
 const END_INDEX_OF_MINUTE = 16;
 
 export default class AddEvent extends Component {
-  handleSubmit = async e => {
+  handleSubmit = async (e) => {
     // need to write validation method
     e.preventDefault();
     const { props } = this;

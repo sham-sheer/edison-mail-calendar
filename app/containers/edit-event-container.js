@@ -3,11 +3,11 @@ import { withRouter } from 'react-router-dom';
 import { editEventBegin } from '../actions/events';
 import EditEvent from '../components/editEvent';
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   providers: state.auth.providers
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
   editEventBegin: (id, eventObject, providerType) =>
     dispatch(editEventBegin(id, eventObject, providerType))
 });

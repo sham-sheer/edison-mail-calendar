@@ -2,16 +2,16 @@ import { createSelector } from 'reselect';
 import moment from 'moment';
 import uniqid from 'uniqid';
 
-const getEvents = state => state.events.calEvents;
+const getEvents = (state) => state.events.calEvents;
 
 // process google events data for React Big calendar
 const getFilteredEvents = createSelector(
   [getEvents],
-  normalizedData => {
+  (normalizedData) => {
     const data = Object.values(normalizedData);
     const formatedEvents = data
       // .filter(obj => obj.hide === false)
-      .map(eachEvent => {
+      .map((eachEvent) => {
         if (eachEvent.end.date === undefined) {
           return {
             id: eachEvent.id,

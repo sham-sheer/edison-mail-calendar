@@ -13,9 +13,7 @@ export const createDb = async () => {
   });
   window.db = db;
   await Promise.all(
-    Object.entries(schemas).map(([name, schema]) =>
-      db.collection({ name, schema })
-    )
+    Object.entries(schemas).map(([name, schema]) => db.collection({ name, schema }))
   );
   return db;
 };

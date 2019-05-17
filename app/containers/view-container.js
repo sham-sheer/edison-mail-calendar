@@ -30,7 +30,7 @@ import {
 } from '../actions/caldav';
 import getFilteredEvents from '../selectors/ui-selector';
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   events: getFilteredEvents(state),
   initialSync: state.events.initialSync,
   isAuth: state.auth.isAuth,
@@ -38,39 +38,37 @@ const mapStateToProps = state => ({
   expiredProviders: state.auth.expiredProviders
 });
 
-const mapDispatchToProps = dispatch => ({
-  beginGetGoogleEvents: user => dispatch(beginGetGoogleEvents(user)),
+const mapDispatchToProps = (dispatch) => ({
+  beginGetGoogleEvents: (user) => dispatch(beginGetGoogleEvents(user)),
   beginGoogleAuth: () => dispatch(beginGoogleAuth()),
 
-  beginGetOutlookEvents: resp => dispatch(beginGetOutlookEvents(resp)),
+  beginGetOutlookEvents: (resp) => dispatch(beginGetOutlookEvents(resp)),
   beginOutlookAuth: () => dispatch(beginOutlookAuth()),
 
-  beginGetExchangeEvents: resp => dispatch(beginGetExchangeEvents(resp)),
-  beginExchangeAuth: user => dispatch(beginExchangeAuth(user)),
+  beginGetExchangeEvents: (resp) => dispatch(beginGetExchangeEvents(resp)),
+  beginExchangeAuth: (user) => dispatch(beginExchangeAuth(user)),
 
-  retrieveStoreEvents: (providerType, user) =>
-    dispatch(retrieveStoreEvents(providerType, user)),
-  beginDeleteEvent: id => dispatch(beginDeleteEvent(id)),
+  retrieveStoreEvents: (providerType, user) => dispatch(retrieveStoreEvents(providerType, user)),
+  beginDeleteEvent: (id) => dispatch(beginDeleteEvent(id)),
 
   clearAllEvents: () => dispatch(clearAllEvents()),
 
-  onStartGetGoogleAuth: user => dispatch(successGoogleAuth(user)),
-  onStartGetOutlookAuth: user => dispatch(successOutlookAuth(user)),
-  onStartGetExchangeAuth: user => dispatch(successExchangeAuth(user)),
+  onStartGetGoogleAuth: (user) => dispatch(successGoogleAuth(user)),
+  onStartGetOutlookAuth: (user) => dispatch(successOutlookAuth(user)),
+  onStartGetExchangeAuth: (user) => dispatch(successExchangeAuth(user)),
 
-  onExpiredOutlook: user => dispatch(expiredOutlookAuth(user)),
-  onExpiredGoogle: user => dispatch(expiredGoogleAuth(user)),
+  onExpiredOutlook: (user) => dispatch(expiredOutlookAuth(user)),
+  onExpiredGoogle: (user) => dispatch(expiredGoogleAuth(user)),
 
   beginPollingEvents: () => dispatch(beginPollingEvents()),
   endPollingEvents: () => dispatch(endPollingEvents()),
 
-  beginPendingActions: providers => dispatch(beginPendingActions(providers)),
+  beginPendingActions: (providers) => dispatch(beginPendingActions(providers)),
   endPendingActions: () => dispatch(endPendingActions()),
 
   beginRetrieveCalDavEvents: () => dispatch(beginRetrieveCaldavEvents()),
   resetCaldavAccount: () => dispatch(resetCaldavAccount()),
-  beginDeleteCalendarObject: payload =>
-    dispatch(beginDeleteCalendarObject(payload))
+  beginDeleteCalendarObject: (payload) => dispatch(beginDeleteCalendarObject(payload))
 });
 
 export default connect(

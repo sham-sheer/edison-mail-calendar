@@ -4,7 +4,7 @@ import { dropDownTime } from '../../utils/constants';
 import './time.css';
 
 class Time extends Component {
-  handleSelectChange = time => {
+  handleSelectChange = (time) => {
     const { props } = this;
     props.timeProps({
       name: props.name,

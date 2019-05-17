@@ -4,7 +4,7 @@ import { withStyles } from '@material-ui/core/styles';
 import { postEventBegin } from '../actions/events';
 import AddEvent from '../components/addEvent';
 
-const styles = theme => ({
+const styles = (theme) => ({
   container: {
     display: 'flex',
     flexWrap: 'wrap'
@@ -20,14 +20,13 @@ const styles = theme => ({
   cssFocused: {}
 });
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   events: state.events,
   providers: state.auth.providers
 });
 
-const mapDispatchToProps = dispatch => ({
-  postEventBegin: (event, auth, type) =>
-    dispatch(postEventBegin(event, auth, type))
+const mapDispatchToProps = (dispatch) => ({
+  postEventBegin: (event, auth, type) => dispatch(postEventBegin(event, auth, type))
 });
 
 export default connect(

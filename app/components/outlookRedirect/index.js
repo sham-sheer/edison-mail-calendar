@@ -9,11 +9,11 @@ import { getAccessToken, filterUser } from '../../utils/client/outlook';
 
 import getDb from '../../db';
 
-const mapDispatchToProps = dispatch => ({
-  successOutlookAuth: user => dispatch(successOutlookAuth(user))
+const mapDispatchToProps = (dispatch) => ({
+  successOutlookAuth: (user) => dispatch(successOutlookAuth(user))
 });
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   isAuth: state.auth.currentUser
 });
 
@@ -32,11 +32,11 @@ class OutLookRedirect extends React.Component {
     const now = new Date();
     const expireDate = new Date(now.getTime() + expiresin);
 
-    getAccessToken(accessToken, expireDate.getTime(), confirmedAccessToken => {
+    getAccessToken(accessToken, expireDate.getTime(), (confirmedAccessToken) => {
       if (confirmedAccessToken) {
         // Create a Graph client
         const client = Client.init({
-          authProvider: done => {
+          authProvider: (done) => {
             // Just return the token
             done(null, confirmedAccessToken);
           }
@@ -51,11 +51,7 @@ class OutLookRedirect extends React.Component {
               console.log(err);
             } else {
               const db = await getDb();
-              const filteredSchemaUser = filterUser(
-                res,
-                accessToken,
-                expireDate.getTime()
-              );
+              const filteredSchemaUser = filterUser(res, accessToken, expireDate.getTime());
 
               const doc = await db.persons.upsert(filteredSchemaUser);
               console.log(doc);

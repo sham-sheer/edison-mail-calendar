@@ -11,7 +11,7 @@ const initialState = {
 };
 
 const mergeEvents = (oldEvents, newItems) => {
-  const oldIds = oldEvents.map(item => item.id);
+  const oldIds = oldEvents.map((item) => item.id);
   const newPayload = [...oldEvents];
 
   for (const newItem of newItems) {
@@ -25,9 +25,7 @@ const mergeEvents = (oldEvents, newItems) => {
 const syncEvents = (oldEvents, newEvents) => {
   const newPayload = [...oldEvents];
   for (const newEvent of newEvents) {
-    const pos = newPayload
-      .map(object => object.originalId)
-      .indexOf(newEvent.event.originalId);
+    const pos = newPayload.map((object) => object.originalId).indexOf(newEvent.event.originalId);
     switch (newEvent.type) {
       case 'create':
         newPayload.push(newEvent.event);

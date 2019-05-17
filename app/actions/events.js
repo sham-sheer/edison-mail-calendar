@@ -39,7 +39,7 @@ export const END_POLLING_EVENTS = 'END_POLLING_EVENTS';
 export const BEGIN_PENDING_ACTIONS = 'BEGIN_PENDING_ACTIONS';
 export const END_PENDING_ACTIONS = 'END_PENDING_ACTIONS';
 
-export const beginGetGoogleEvents = resp => ({
+export const beginGetGoogleEvents = (resp) => ({
   type: GET_EVENTS_BEGIN,
   payload: resp
 });
@@ -53,7 +53,7 @@ export const postEventBegin = (calEvent, auth, providerType) => ({
   }
 });
 
-export const getEventsFailure = error => ({
+export const getEventsFailure = (error) => ({
   type: GET_EVENTS_FAILURE,
   payload: {
     error
@@ -78,7 +78,7 @@ export const postEventSuccess = (response, providerType, owner) => ({
   }
 });
 
-export const beginDeleteEvent = id => ({
+export const beginDeleteEvent = (id) => ({
   type: DELETE_EVENT_BEGIN,
   payload: id
 });
@@ -93,17 +93,17 @@ export const GET_OUTLOOK_EVENTS_BEGIN = 'GET_OUTLOOK_EVENTS_BEGIN';
 export const GET_OUTLOOK_EVENTS_SUCCESS = 'GET_OUTLOOK_EVENTS_SUCCESS';
 export const GET_OUTLOOK_EVENTS_FAILURE = 'GET_OUTLOOK_EVENTS_FAILURE';
 
-export const beginGetOutlookEvents = resp => ({
+export const beginGetOutlookEvents = (resp) => ({
   type: GET_OUTLOOK_EVENTS_BEGIN,
   payload: resp
 });
 
-export const postOutlookEventBegin = calEvent => ({
+export const postOutlookEventBegin = (calEvent) => ({
   type: GET_OUTLOOK_EVENTS_FAILURE,
   payload: calEvent
 });
 
-export const getOutlookEventsSuccess = response => ({
+export const getOutlookEventsSuccess = (response) => ({
   type: GET_OUTLOOK_EVENTS_SUCCESS,
   payload: {
     data: response
@@ -121,14 +121,14 @@ export const editEventBegin = (id, eventObject, providerType) => ({
   }
 });
 
-export const editEventSuccess = resp => ({
+export const editEventSuccess = (resp) => ({
   type: EDIT_EVENT_SUCCESS,
   payload: {
     resp
   }
 });
 
-export const apiFailure = error => ({
+export const apiFailure = (error) => ({
   type: API_ERROR,
   payload: {
     error
@@ -141,12 +141,12 @@ export const GET_EXCHANGE_EVENTS_BEGIN = 'GET_EXCHANGE_EVENTS_BEGIN';
 export const GET_EXCHANGE_EVENTS_SUCCESS = 'GET_EXCHANGE_EVENTS_SUCCESS';
 export const GET_EXCHANGE_EVENTS_FAILURE = 'GET_EXCHANGE_EVENTS_FAILURE';
 
-export const beginGetExchangeEvents = resp => ({
+export const beginGetExchangeEvents = (resp) => ({
   type: GET_EXCHANGE_EVENTS_BEGIN,
   payload: resp
 });
 
-export const getExchangeEventsSuccess = resp => ({
+export const getExchangeEventsSuccess = (resp) => ({
   type: GET_EXCHANGE_EVENTS_SUCCESS,
   payload: resp
 });
@@ -166,22 +166,22 @@ export const clearAllEventsSuccess = () => ({
 // ---------------------- GENERAL ---------------------- //
 
 // ---------------------- POLLING ---------------------- //
-export const beginPollingEvents = payload => ({
+export const beginPollingEvents = (payload) => ({
   type: BEGIN_POLLING_EVENTS
 });
 
-export const endPollingEvents = payload => ({
+export const endPollingEvents = (payload) => ({
   type: END_POLLING_EVENTS
 });
 // ---------------------- POLLING ---------------------- //
 
 // ---------------------- POLLING ---------------------- //
-export const beginPendingActions = payload => ({
+export const beginPendingActions = (payload) => ({
   type: BEGIN_PENDING_ACTIONS,
   payload
 });
 
-export const endPendingActions = payload => ({
+export const endPendingActions = (payload) => ({
   type: END_PENDING_ACTIONS
 });
 // ---------------------- POLLING ---------------------- //

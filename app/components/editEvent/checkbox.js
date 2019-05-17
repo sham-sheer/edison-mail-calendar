@@ -30,7 +30,7 @@ const StyledCheckbox = styled.div`
   display: inline-block;
   width: 16px;
   height: 16px;
-  background: ${props => (props.checked ? 'salmon' : 'papayawhip')}
+  background: ${(props) => (props.checked ? 'salmon' : 'papayawhip')}
   border-radius: 3px;
   transition: all 150ms;
 
@@ -39,7 +39,7 @@ const StyledCheckbox = styled.div`
   }
 
   ${Icon} {
-    visibility: ${props => (props.checked ? 'visible' : 'hidden')}
+    visibility: ${(props) => (props.checked ? 'visible' : 'hidden')}
   }
 `;
 

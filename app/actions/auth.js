@@ -7,11 +7,11 @@ export const EXPIRED_GOOGLE_AUTH = 'EXPIRED_GOOGLE_AUTH';
 
 export const beginGoogleAuth = () => ({ type: BEGIN_GOOGLE_AUTH });
 export const failGoogleAuth = () => ({ type: FAIL_GOOGLE_AUTH });
-export const successGoogleAuth = user => ({
+export const successGoogleAuth = (user) => ({
   type: SUCCESS_GOOGLE_AUTH,
   payload: user
 });
-export const expiredGoogleAuth = user => ({
+export const expiredGoogleAuth = (user) => ({
   type: EXPIRED_GOOGLE_AUTH,
   payload: user
 });
@@ -26,11 +26,11 @@ export const EXPIRED_OUTLOOK_AUTH = 'EXPIRED_OUTLOOK_AUTH';
 
 export const beginOutlookAuth = () => ({ type: BEGIN_OUTLOOK_AUTH });
 export const failOutlookAuth = () => ({ type: FAIL_OUTLOOK_AUTH });
-export const successOutlookAuth = user => ({
+export const successOutlookAuth = (user) => ({
   type: SUCCESS_OUTLOOK_AUTH,
   payload: user
 });
-export const expiredOutlookAuth = user => ({
+export const expiredOutlookAuth = (user) => ({
   type: EXPIRED_OUTLOOK_AUTH,
   payload: user
 });
@@ -42,12 +42,12 @@ export const SUCCESS_EXCHANGE_AUTH = 'SUCCESS_EXCHANGE_AUTH';
 export const FAIL_EXCHANGE_AUTH = 'FAIL_EXCHANGE_AUTH';
 export const RETRY_EXCHANGE_AUTH = 'RETRY_EXCHANGE_AUTH';
 
-export const beginExchangeAuth = user => ({
+export const beginExchangeAuth = (user) => ({
   type: BEGIN_EXCHANGE_AUTH,
   payload: user
 });
 export const failExchangeAuth = () => ({ type: FAIL_EXCHANGE_AUTH });
-export const successExchangeAuth = user => ({
+export const successExchangeAuth = (user) => ({
   type: SUCCESS_EXCHANGE_AUTH,
   payload: user
 });

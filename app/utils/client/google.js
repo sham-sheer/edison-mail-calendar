@@ -18,7 +18,7 @@ export const loadClient = async () => {
 };
 
 export const loadFullCalendar = async () =>
-  new Promise(resolve => {
+  new Promise((resolve) => {
     resolve(
       window.gapi.client.calendar.events.list({
         calendarId: 'primary'
@@ -26,8 +26,8 @@ export const loadFullCalendar = async () =>
     );
   });
 
-export const loadSyncCalendar = async syncToken =>
-  new Promise(resolve => {
+export const loadSyncCalendar = async (syncToken) =>
+  new Promise((resolve) => {
     resolve(
       window.gapi.client.calendar.events.list({
         calendarId: 'primary',
@@ -36,13 +36,13 @@ export const loadSyncCalendar = async syncToken =>
     );
   });
 
-export const postGoogleEvent = async calendarObject =>
-  new Promise(resolve => {
+export const postGoogleEvent = async (calendarObject) =>
+  new Promise((resolve) => {
     resolve(window.gapi.client.calendar.events.insert(calendarObject));
   });
 
 export const editGoogleEvent = async (eventId, eventObject) =>
-  new Promise(resolve => {
+  new Promise((resolve) => {
     resolve(
       window.gapi.client.calendar.events.patch({
         calendarId: 'primary',
@@ -52,8 +52,8 @@ export const editGoogleEvent = async (eventId, eventObject) =>
     );
   });
 
-export const deleteGoogleEvent = async eventId =>
-  new Promise(resolve => {
+export const deleteGoogleEvent = async (eventId) =>
+  new Promise((resolve) => {
     resolve(
       window.gapi.client.calendar.events.delete({
         calendarId: 'primary',
@@ -62,8 +62,8 @@ export const deleteGoogleEvent = async eventId =>
     );
   });
 
-export const loadNextPage = async pageToken =>
-  new Promise(resolve => {
+export const loadNextPage = async (pageToken) =>
+  new Promise((resolve) => {
     resolve(
       window.gapi.client.calendar.events.list({
         calendarId: 'primary',

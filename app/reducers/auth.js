@@ -31,21 +31,17 @@ export default function authReducer(state = initialState, action) {
           ...state.providers,
           [ProviderTypes.GOOGLE]:
             state.providers[ProviderTypes.GOOGLE].filter(
-              e => e.personId === action.payload.user.personId
+              (e) => e.personId === action.payload.user.personId
             ).length > 0
-              ? state.providers[ProviderTypes.GOOGLE].map(e =>
-                  e.personId === action.payload.user.personId
-                    ? action.payload.user
-                    : e
+              ? state.providers[ProviderTypes.GOOGLE].map((e) =>
+                  e.personId === action.payload.user.personId ? action.payload.user : e
                 )
-              : state.providers[ProviderTypes.GOOGLE].concat(
-                  action.payload.user
-                )
+              : state.providers[ProviderTypes.GOOGLE].concat(action.payload.user)
         },
         expiredProviders: {
-          [ProviderTypes.GOOGLE]: state.expiredProviders[
-            ProviderTypes.GOOGLE
-          ].filter(user => user.originalId !== action.payload.user.originalId),
+          [ProviderTypes.GOOGLE]: state.expiredProviders[ProviderTypes.GOOGLE].filter(
+            (user) => user.originalId !== action.payload.user.originalId
+          ),
           [ProviderTypes.OUTLOOK]: state.expiredProviders[ProviderTypes.OUTLOOK]
         }
       });
@@ -58,12 +54,10 @@ export default function authReducer(state = initialState, action) {
           ...state.expiredProviders,
           [ProviderTypes.GOOGLE]:
             state.expiredProviders[ProviderTypes.GOOGLE].filter(
-              e => e.personId === action.payload.user.personId
+              (e) => e.personId === action.payload.user.personId
             ).length > 0
               ? state.expiredProviders[ProviderTypes.GOOGLE]
-              : state.expiredProviders[ProviderTypes.GOOGLE].concat(
-                  action.payload.user
-                )
+              : state.expiredProviders[ProviderTypes.GOOGLE].concat(action.payload.user)
         }
       });
     // ----------------------------------------------- GOOGLE ----------------------------------------------- //
@@ -78,22 +72,18 @@ export default function authReducer(state = initialState, action) {
           ...state.providers,
           [ProviderTypes.OUTLOOK]:
             state.providers[ProviderTypes.OUTLOOK].filter(
-              e => e.personId === action.payload.user.personId
+              (e) => e.personId === action.payload.user.personId
             ).length > 0
-              ? state.providers[ProviderTypes.OUTLOOK].map(e =>
-                  e.personId === action.payload.user.personId
-                    ? action.payload.user
-                    : e
+              ? state.providers[ProviderTypes.OUTLOOK].map((e) =>
+                  e.personId === action.payload.user.personId ? action.payload.user : e
                 )
-              : state.providers[ProviderTypes.OUTLOOK].concat(
-                  action.payload.user
-                )
+              : state.providers[ProviderTypes.OUTLOOK].concat(action.payload.user)
         },
         expiredProviders: {
           ...state.expiredProviders,
-          [ProviderTypes.OUTLOOK]: state.expiredProviders[
-            ProviderTypes.OUTLOOK
-          ].filter(user => user.originalId !== action.payload.user.originalId)
+          [ProviderTypes.OUTLOOK]: state.expiredProviders[ProviderTypes.OUTLOOK].filter(
+            (user) => user.originalId !== action.payload.user.originalId
+          )
         }
       });
     case AuthActionTypes.FAIL_OUTLOOK_AUTH:
@@ -105,12 +95,10 @@ export default function authReducer(state = initialState, action) {
           ...state.expiredProviders,
           [ProviderTypes.OUTLOOK]:
             state.expiredProviders[ProviderTypes.OUTLOOK].filter(
-              e => e.personId === action.payload.user.personId
+              (e) => e.personId === action.payload.user.personId
             ).length > 0
               ? state.expiredProviders[ProviderTypes.OUTLOOK]
-              : state.expiredProviders[ProviderTypes.OUTLOOK].concat(
-                  action.payload.user
-                )
+              : state.expiredProviders[ProviderTypes.OUTLOOK].concat(action.payload.user)
         }
       });
     // ----------------------------------------------- OUTLOOK ----------------------------------------------- //
@@ -125,21 +113,16 @@ export default function authReducer(state = initialState, action) {
           ...state.providers,
           [ProviderTypes.EXCHANGE]:
             state.providers[ProviderTypes.EXCHANGE].filter(
-              e => e.personId === action.payload.user.personId
+              (e) => e.personId === action.payload.user.personId
             ).length > 0
-              ? state.providers[ProviderTypes.EXCHANGE].map(e =>
-                  e.personId === action.payload.user.personId
-                    ? action.payload.user
-                    : e
+              ? state.providers[ProviderTypes.EXCHANGE].map((e) =>
+                  e.personId === action.payload.user.personId ? action.payload.user : e
                 )
-              : state.providers[ProviderTypes.EXCHANGE].concat(
-                  action.payload.user
-                )
+              : state.providers[ProviderTypes.EXCHANGE].concat(action.payload.user)
         },
         expiredProviders: {
           ...state.expiredProviders,
-          [ProviderTypes.EXCHANGE]:
-            state.expiredProviders[ProviderTypes.EXCHANGE]
+          [ProviderTypes.EXCHANGE]: state.expiredProviders[ProviderTypes.EXCHANGE]
           // [ProviderTypes.EXCHANGE]: state.expiredProviders[ProviderTypes.EXCHANGE].filter(user => user.originalId !== action.payload.user.originalId)  // Don't need this as exchange users never expire due to no oauth yet
         }
       });

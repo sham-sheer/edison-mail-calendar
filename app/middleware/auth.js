@@ -7,12 +7,7 @@ import {
   FolderSchema,
   FolderView
 } from 'ews-javascript-api';
-import {
-  GOOGLE_API_KEY,
-  GOOGLE_CLIENT_ID,
-  GOOGLE_SCOPE,
-  filterUser
-} from '../utils/client/google';
+import { GOOGLE_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_SCOPE, filterUser } from '../utils/client/google';
 import { buildAuthUrl, testFunc } from '../utils/client/outlook';
 
 import { filterExchangeUser } from '../utils/client/exchange';
@@ -24,7 +19,7 @@ import * as DbActionTypes from '../actions/db/events';
 
 let GoogleAuth = '';
 
-const handleAuthClick = auth => {
+const handleAuthClick = (auth) => {
   console.log(auth);
   if (auth.isSignedIn.get()) {
     console.log('Signed In to Google!');
@@ -33,7 +28,7 @@ const handleAuthClick = auth => {
   }
 };
 
-export const authBeginMiddleware = store => next => action => {
+export const authBeginMiddleware = (store) => (next) => (action) => {
   if (action === undefined) {
     console.log('Action undefined, returning and doing nothing.');
     return;
@@ -158,10 +153,7 @@ export const authBeginMiddleware = store => next => action => {
     // testFunc();
   } else if (action.type === AuthActionTypes.BEGIN_EXCHANGE_AUTH) {
     const exch = new ExchangeService();
-    exch.Credentials = new WebCredentials(
-      action.payload.username,
-      action.payload.password
-    );
+    exch.Credentials = new WebCredentials(action.payload.username, action.payload.password);
     exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
 
     // This is just to check if you can login. It actually does nothing and there is no pseudo function to check login status.
@@ -182,7 +174,7 @@ export const authBeginMiddleware = store => next => action => {
             }
           });
         },
-        error => {
+        (error) => {
           console.log(error);
           next({
             type: AuthActionTypes.FAIL_EXCHANGE_AUTH
@@ -193,7 +185,7 @@ export const authBeginMiddleware = store => next => action => {
   return next(action);
 };
 
-export const authSuccessMiddleware = store => next => action => {
+export const authSuccessMiddleware = (store) => (next) => (action) => {
   /* if(action.type === AuthActionTypes.SUCCESS_GOOGLE_AUTH) {
     next({
       type: DbActionTypes.RETRIEVE_STORED_EVENTS,

@@ -13,9 +13,9 @@ const OUTLOOK_SCOPES =
 // const REDIRECT_URI = 'http://localhost:1212/outlook-redirect';
 const REDIRECT_URI = 'http://localhost:1212/outlook-redirect';
 
-const params = data =>
+const params = (data) =>
   Object.keys(data)
-    .map(key => `${key}=${encodeURIComponent(data[key])}`)
+    .map((key) => `${key}=${encodeURIComponent(data[key])}`)
     .join('&');
 
 export const testFunc = () => {
@@ -75,9 +75,9 @@ const guid = () => {
     }
     return ret;
   }
-  return `${s4(buf[0]) + s4(buf[1])}-${s4(buf[2])}-${s4(buf[3])}-${s4(
-    buf[4]
-  )}-${s4(buf[5])}${s4(buf[6])}${s4(buf[7])}`;
+  return `${s4(buf[0]) + s4(buf[1])}-${s4(buf[2])}-${s4(buf[3])}-${s4(buf[4])}-${s4(buf[5])}${s4(
+    buf[6]
+  )}${s4(buf[7])}`;
 };
 
 export const getAccessToken = (accessToken, accessTokenExpiry, callback) => {
@@ -99,11 +99,11 @@ export const getAccessToken = (accessToken, accessTokenExpiry, callback) => {
 
 // yay, this should be the last portion before we handle multiple outlook accounts!!
 export const getUserEvents = (accessToken, accessTokenExpiry, callback) => {
-  getAccessToken(accessToken, accessTokenExpiry, confirmedAccessToken => {
+  getAccessToken(accessToken, accessTokenExpiry, (confirmedAccessToken) => {
     if (confirmedAccessToken) {
       // Create a Graph client
       const client = Client.init({
-        authProvider: done => {
+        authProvider: (done) => {
           // Just return the token
           done(null, confirmedAccessToken);
         }
@@ -149,7 +149,7 @@ async function loadOutlookEventsChunked(client, id) {
       .get();
 
     // Creating a new page iterator instance with client a graph client instance, page collection response from request and callback
-    const pageIterator = new PageIterator(client, response, data => {
+    const pageIterator = new PageIterator(client, response, (data) => {
       allEvents.push(data);
 
       if (allEvents.length !== response['@odata.count']) {
@@ -227,7 +227,7 @@ export const filterUser = (jsonObj, accessToken, accessTokenExpiry) => ({
   accessTokenExpiry
 });
 
-export const filterEventToOutlook = jsonObject => ({
+export const filterEventToOutlook = (jsonObject) => ({
   subject: jsonObject.summary,
   body: {
     contentType: 'HTML',

@@ -44,7 +44,7 @@ export default class AddEvent extends Component {
     });
   }
 
-  processStringForUTC = dateInString => {
+  processStringForUTC = (dateInString) => {
     let dateInStringInUTC;
     if (dateInString.substring(START_INDEX_OF_UTC_FORMAT) === 'pm') {
       const hourInString = parseInt(
@@ -63,11 +63,11 @@ export default class AddEvent extends Component {
     return dateInStringInUTC;
   };
 
-  handleChange = event => {
+  handleChange = (event) => {
     this.setState({ [event.target.name]: event.target.value });
   };
 
-  handleSubmit = async e => {
+  handleSubmit = async (e) => {
     // need to write validation method
     e.preventDefault();
     const { props, state } = this;
@@ -101,7 +101,7 @@ export default class AddEvent extends Component {
     const providers = [];
     const { props, state } = this;
     for (const providerIndivAccount of Object.keys(props.providers)) {
-      props.providers[providerIndivAccount].map(data => providers.push(data));
+      props.providers[providerIndivAccount].map((data) => providers.push(data));
     }
 
     return (
@@ -162,7 +162,7 @@ export default class AddEvent extends Component {
             margin="normal"
             name="selectedProvider"
           >
-            {providers.map(option => (
+            {providers.map((option) => (
               // Currently an issue: https://github.com/mui-org/material-ui/issues/10845
               <MenuItem key={option.personId} value={JSON.stringify(option)}>
                 {option.email}
