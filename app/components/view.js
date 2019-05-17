@@ -232,8 +232,8 @@ export default class View extends React.Component {
     db.persons
       .find()
       .exec()
-      .then(providerUserData => {
-        providerUserData.forEach(singleProviderUserData => {
+      .then((providerUserData) => {
+        providerUserData.forEach((singleProviderUserData) => {
           if (singleProviderUserData.providerType === ProviderTypes.EXCHANGE) {
             // Might wanna rethink this approach as it might be good for some clean up here.
             props.onStartGetExchangeAuth(
@@ -320,7 +320,7 @@ export default class View extends React.Component {
     const { events } = this.props;
     const { props } = this;
 
-    const nextEvents = events.map(existingEvent =>
+    const nextEvents = events.map((existingEvent) =>
       existingEvent.id === event.id ? { ...existingEvent, start, end } : existingEvent
     );
     props.updateEvents(nextEvents);
@@ -337,7 +337,7 @@ export default class View extends React.Component {
     props.history.push(`/${state.currentEvent.id}`);
   };
 
-  handleEventClick = event => {
+  handleEventClick = (event) => {
     this.setState({
       isShowEvent: true,
       currentEvent: event,
@@ -346,12 +346,11 @@ export default class View extends React.Component {
     });
   };
 
-  // Exchange login handling here first, will move it in the future!!
-  handleChange = event => {
+  handleChange = (event) => {
     this.setState({ [event.target.name]: event.target.value });
   };
 
-  handleSubmit = async e => {
+  handleSubmit = async (e) => {
     e.preventDefault();
     const { state } = this;
     this.authorizeExchangeCodeRequest({
@@ -389,7 +388,7 @@ export default class View extends React.Component {
   };
 
   /* Render functions */
-  renderCalendar = props => {
+  renderCalendar = (props) => {
     const { events } = props;
     return (
       <DragAndDropCalendar
@@ -403,14 +402,14 @@ export default class View extends React.Component {
         onEventDrop={this.moveEventList}
         onEventResize={this.resizeEvent}
         onSelectSlot={this.handleSelectDate}
-        onSelectEvent={event => this.handleEventClick(event)}
+        onSelectEvent={(event) => this.handleEventClick(event)}
         popup
         resizable
       />
     );
   };
 
-  renderEventPopup = state => (
+  renderEventPopup = (state) => (
     <Modal
       isOpen={state.isShowEvent}
       onAfterOpen={this.afterOpenModal}
@@ -418,7 +417,7 @@ export default class View extends React.Component {
       style={customStyles}
       contentLabel="Event Modal"
     >
-      <h2 ref={subtitle => (this.subtitle = subtitle)}>{state.currentEvent.title}</h2>
+      <h2 ref={(subtitle) => (this.subtitle = subtitle)}>{state.currentEvent.title}</h2>
       <h4>
         {state.currentEventStartDateTime} - {state.currentEventEndDateTime}
       </h4>

@@ -85,19 +85,20 @@ import ServerUrls from '../utils/serverUrls';
 
 const dav = require('dav');
 
-export const beginGetEventsEpics = action$ =>
+// ------------------------------------ GOOGLE ------------------------------------- //
+export const beginGetEventsEpics = (action$) =>
   action$.pipe(
     ofType(GET_EVENTS_BEGIN),
-    mergeMap(action =>
+    mergeMap((action) =>
       iif(
         () => action.payload !== undefined,
         from(loadClient()).pipe(
           mergeMap(() =>
             from(setCalendarRequest()).pipe(
-              mergeMap(resp =>
+              mergeMap((resp) =>
                 from(eventsPromise(resp)).pipe(
                   // made some changes here for resp, unsure if it breaks.
-                  map(resp2 => getEventsSuccess(resp2, Providers.GOOGLE))
+                  map((resp2) => getEventsSuccess(resp2, Providers.GOOGLE))
                 )
               )
             )
@@ -108,53 +109,101 @@ export const beginGetEventsEpics = action$ =>
     )
   );
 
-export const beginEditEventEpics = action$ =>
+export const beginEditEventEpics = (action$) =>
   action$.pipe(
     ofType(EDIT_EVENT_BEGIN),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(editEvent(action.payload)).pipe(
-        map(resp => editEventSuccess(resp), catchError(error => apiFailure(error)))
+        map((resp) => editEventSuccess(resp), catchError((error) => apiFailure(error)))
       )
     )
   );
 
-const editEvent = async payload => {
+const editEvent = async (payload) => {
   const calendarObject = payload.data;
   const { id } = payload;
   await loadClient();
   return editGoogleEvent(id, calendarObject);
 };
 
-export const beginPostEventEpics = action$ =>
+const deleteEvent = async (id) => {
+  await loadClient();
+  return deleteGoogleEvent(id);
+};
+
+const setCalendarRequest = () => {
+  let request;
+  const syncToken = localStorage.getItem('sync');
+  if (syncToken == null) {
+    console.log('Performing full sync');
+    request = loadFullCalendar();
+  } else {
+    console.log('Performing incremental sync');
+    request = loadSyncCalendar(syncToken);
+  }
+  return request;
+};
+
+const eventsPromise = async (resp) => {
+  const items = [];
+  return new Promise((resolve, reject) => {
+    fetchEvents(resp, items, resolve, reject);
+  });
+};
+
+const fetchEvents = (resp, items, resolve, reject) => {
+  const newItems = items.concat(resp.result.items);
+  if (resp.result.nextPageToken !== undefined) {
+    loadNextPage(resp.result.nextPageToken)
+      .then((nextResp) => fetchEvents(nextResp, newItems, resolve, reject))
+      .catch((e) => {
+        if (e.code === 410) {
+          console.log('Invalid sync token, clearing event store and re-syncing.');
+          localStorage.deleteItem('sync');
+          loadFullCalendar().then((newResp) => fetchEvents(newResp, items, resolve, reject));
+        } else {
+          console.log(e);
+          reject('Something went wrong, Please refresh and try again');
+        }
+      });
+  } else {
+    localStorage.setItem('sync', resp.result.nextSyncToken);
+    resolve(newItems);
+  }
+};
+// ------------------------------------ GOOGLE ------------------------------------- //
+
+// --------------------------------- CREATE EVENTS --------------------------------- //
+export const beginPostEventEpics = (action$) =>
   action$.pipe(
     ofType(POST_EVENT_BEGIN),
-    mergeMap(action => {
+    mergeMap((action) => {
       if (action.payload.providerType === Providers.GOOGLE) {
         return from(postEvent(action.payload)).pipe(
           map(
-            resp => postEventSuccess([resp.result], action.payload.providerType) // Think if you need to pass in owner here
+            (resp) => postEventSuccess([resp.result], action.payload.providerType) // Think if you need to pass in owner here
           ),
-          catchError(error => apiFailure(error))
+          catchError((error) => apiFailure(error))
         );
       }
       if (action.payload.providerType === Providers.OUTLOOK) {
         return from(postEventsOutlook(action.payload)).pipe(
-          map(resp => postEventSuccess([resp], action.payload.providerType)), // Think if you need to pass in owner here
-          catchError(error => apiFailure(error))
+          map((resp) => postEventSuccess([resp], action.payload.providerType)), // Think if you need to pass in owner here
+          catchError((error) => apiFailure(error))
         );
       }
       if (action.payload.providerType === Providers.EXCHANGE) {
         return from(postEventsExchange(action.payload)).pipe(
-          map(resp =>
+          map((resp) =>
             postEventSuccess([resp], action.payload.providerType, action.payload.auth.email)
           ),
-          catchError(error => apiFailure(error))
+          catchError((error) => apiFailure(error))
         );
       }
     })
   );
 
-const postEvent = async resource => {
+const postEvent = async (resource) => {
   const calendarObject = {
     calendarId: 'primary',
     resource: resource.data
@@ -163,13 +212,13 @@ const postEvent = async resource => {
   return postGoogleEvent(calendarObject);
 };
 
-const postEventsOutlook = payload =>
+const postEventsOutlook = (payload) =>
   new Promise((resolve, reject) => {
-    getAccessToken(payload.auth.accessToken, payload.auth.accessTokenExpiry, accessToken => {
+    getAccessToken(payload.auth.accessToken, payload.auth.accessTokenExpiry, (accessToken) => {
       if (accessToken) {
         // Create a Graph client
         const client = Client.init({
-          authProvider: done => {
+          authProvider: (done) => {
             // Just return the token
             done(null, accessToken);
           }
@@ -191,7 +240,7 @@ const postEventsOutlook = payload =>
     });
   });
 
-const postEventsExchange = payload =>
+const postEventsExchange = (payload) =>
   new Promise((resolve, reject) => {
     // Create Exchange Service and set up credientials
     const exch = new ExchangeService();
@@ -226,7 +275,7 @@ const postEventsExchange = payload =>
           resolve(item);
         },
         // On error
-        async error => {
+        async (error) => {
           // Creating a temp object with uniqueid due to not having any internet, retry w/ pending action
           const db = await getDb();
           const obj = {
@@ -252,66 +301,21 @@ const postEventsExchange = payload =>
           throw error;
         }
       )
-      .catch(error => throwError(error));
+      .catch((error) => throwError(error));
   });
+// --------------------------------- CREATE EVENTS --------------------------------- //
 
-const deleteEvent = async id => {
-  await loadClient();
-  return deleteGoogleEvent(id);
-};
-
-const setCalendarRequest = () => {
-  let request;
-  const syncToken = localStorage.getItem('sync');
-  if (syncToken == null) {
-    console.log('Performing full sync');
-    request = loadFullCalendar();
-  } else {
-    console.log('Performing incremental sync');
-    request = loadSyncCalendar(syncToken);
-  }
-  return request;
-};
-
-const normalizeEvents = response => {
+const normalizeEvents = (response) => {
   const singleEvent = new schema.Entity('events');
   const results = normalize({ events: response }, { events: [singleEvent] });
   return results;
 };
 
-const eventsPromise = async resp => {
-  const items = [];
-  return new Promise((resolve, reject) => {
-    fetchEvents(resp, items, resolve, reject);
-  });
-};
-
-const fetchEvents = (resp, items, resolve, reject) => {
-  const newItems = items.concat(resp.result.items);
-  if (resp.result.nextPageToken !== undefined) {
-    loadNextPage(resp.result.nextPageToken)
-      .then(nextResp => fetchEvents(nextResp, newItems, resolve, reject))
-      .catch(e => {
-        if (e.code === 410) {
-          console.log('Invalid sync token, clearing event store and re-syncing.');
-          localStorage.deleteItem('sync');
-          loadFullCalendar().then(newResp => fetchEvents(newResp, items, resolve, reject));
-        } else {
-          console.log(e);
-          reject('Something went wrong, Please refresh and try again');
-        }
-      });
-  } else {
-    localStorage.setItem('sync', resp.result.nextSyncToken);
-    resolve(newItems);
-  }
-};
-
 // ------------------------------------ OUTLOOK ------------------------------------ //
-export const beginGetOutlookEventsEpics = action$ =>
+export const beginGetOutlookEventsEpics = (action$) =>
   action$.pipe(
     ofType(GET_OUTLOOK_EVENTS_BEGIN),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(
         new Promise((resolve, reject) => {
           if (action.payload === undefined) {
@@ -333,18 +337,18 @@ export const beginGetOutlookEventsEpics = action$ =>
           );
         })
       ).pipe(
-        map(resp => getEventsSuccess(resp, Providers.OUTLOOK, action.payload.email)),
-        catchError(error => of(error))
+        map((resp) => getEventsSuccess(resp, Providers.OUTLOOK, action.payload.email)),
+        catchError((error) => of(error))
       )
     )
   );
 // ------------------------------------ OUTLOOK ------------------------------------ //
 
-// ------------------------------------ EXCHANGE ------------------------------------ //
-export const beginGetExchangeEventsEpics = action$ =>
+// ----------------------------------- EXCHANGE ------------------------------------ //
+export const beginGetExchangeEventsEpics = (action$) =>
   action$.pipe(
     ofType(GET_EXCHANGE_EVENTS_BEGIN),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(
         new Promise(async (resolve, reject) => {
           if (action.payload === undefined) {
@@ -360,15 +364,15 @@ export const beginGetExchangeEventsEpics = action$ =>
           );
         })
       ).pipe(
-        map(resp => getEventsSuccess(resp, Providers.EXCHANGE, action.payload.email)),
-        catchError(error => of(error))
+        map((resp) => getEventsSuccess(resp, Providers.EXCHANGE, action.payload.email)),
+        catchError((error) => of(error))
       )
     )
   );
-// ------------------------------------ EXCHANGE ------------------------------------ //
+// ----------------------------------- EXCHANGE ------------------------------------ //
 
 // ------------------------------------ GENERAL ------------------------------------ //
-export const clearAllEventsEpics = action$ =>
+export const clearAllEventsEpics = (action$) =>
   action$.pipe(
     ofType(CLEAR_ALL_EVENTS),
     map(() => {
@@ -380,7 +384,7 @@ export const clearAllEventsEpics = action$ =>
 // ------------------------------------ GENERAL ------------------------------------ //
 
 // ------------------------------------ CALDAV ------------------------------------ //
-export const createCaldavAccountEpics = action$ =>
+export const createCaldavAccountEpics = (action$) =>
   action$.pipe(
     ofType(CalDavActionCreators.RESET_CALDAV_ACCOUNT),
     map(() => {
@@ -400,22 +404,22 @@ export const createCaldavAccountEpics = action$ =>
 // ------------------------------------ CALDAV ------------------------------------ //
 
 // ------------------------------------ POLLING ------------------------------------ //
-export const pollingEventsEpics = action$ => {
+export const pollingEventsEpics = (action$) => {
   const stopPolling$ = action$.pipe(ofType(END_POLLING_EVENTS));
   return action$.pipe(
     ofType(BEGIN_POLLING_EVENTS, UPDATE_STORED_EVENTS),
     // ofType(BEGIN_POLLING_EVENTS),
-    switchMap(action =>
+    switchMap((action) =>
       interval(10 * 1000).pipe(
         takeUntil(stopPolling$),
         switchMap(() => from(syncEvents(action))),
-        map(results => syncStoredEvents(results))
+        map((results) => syncStoredEvents(results))
       )
     )
   );
 };
 
-const syncEvents = async action => {
+const syncEvents = async (action) => {
   // Based off which user it is supposed to sync
   const { user } = action.payload;
 
@@ -449,7 +453,7 @@ const syncEvents = async action => {
             continue;
           }
 
-          const dbObj = dbEvents.filter(dbEvent => dbEvent.originalId === appt.Id.UniqueId);
+          const dbObj = dbEvents.filter((dbEvent) => dbEvent.originalId === appt.Id.UniqueId);
           const filteredEvent = Providers.filterIntoSchema(
             appt,
             Providers.EXCHANGE,
@@ -479,7 +483,7 @@ const syncEvents = async action => {
         // Check for deleted events, as if it not in the set, it means that it could be deleted.
         // In database, but not on server, as we are taking server, we just assume delete.
         for (const dbEvent of dbEvents) {
-          const result = appts.find(appt => appt.Id.UniqueId === dbEvent.originalId);
+          const result = appts.find((appt) => appt.Id.UniqueId === dbEvent.originalId);
           // Means we found something, move on to next object or it has not been uploaded to the server yet.
           if (result !== undefined || dbEvent.createdOffline === true) {
             continue;
@@ -510,13 +514,13 @@ const syncEvents = async action => {
 };
 // ------------------------------------ POLLING ------------------------------------ //
 
-// ------------------------------------ PENDING ACTIONS ------------------------------------ //
-export const pendingActionsEpics = action$ => {
+// -------------------------------- PENDING ACTIONS -------------------------------- //
+export const pendingActionsEpics = (action$) => {
   // Stop upon a end pending action trigger, for debugging/stopping if needed
   const stopPolling$ = action$.pipe(ofType(END_PENDING_ACTIONS));
   return action$.pipe(
     ofType(BEGIN_PENDING_ACTIONS),
-    switchMap(action =>
+    switchMap((action) =>
       // At a 5 second interval
       interval(5 * 1000).pipe(
         // Stop when epics see a end pending action
@@ -524,14 +528,14 @@ export const pendingActionsEpics = action$ => {
         concatMap(() =>
           // Get the db
           from(getDb()).pipe(
-            exhaustMap(db =>
+            exhaustMap((db) =>
               // Get all the pending actions
               from(db.pendingactions.find().exec()).pipe(
                 // For each pending action, run the correct result
-                mergeMap(actions =>
+                mergeMap((actions) =>
                   from(handlePendingActions(action.payload, actions, db)).pipe(
                     // Return an array of result, reduced accordingly.
-                    mergeMap(result => of(...result))
+                    mergeMap((result) => of(...result))
                   )
                 )
               )
@@ -543,19 +547,20 @@ export const pendingActionsEpics = action$ => {
   );
 };
 
-const reflect = p => p.then(v => ({ v, status: 'fulfilled' }), e => ({ e, status: 'rejected' }));
+const reflect = (p) =>
+  p.then((v) => ({ v, status: 'fulfilled' }), (e) => ({ e, status: 'rejected' }));
 
 const handlePendingActions = async (users, actions, db) => {
   // Get all events for resolving conflict.
   const docs = await db.events.find().exec();
 
   // Promises array for each of our async action.
-  const promisesArr = actions.map(async action => {
+  const promisesArr = actions.map(async (action) => {
     // Find the corresponding item in our database that is in the pending action.
-    const rxDbObj = docs.filter(obj => obj.originalId === action.eventId)[0];
+    const rxDbObj = docs.filter((obj) => obj.originalId === action.eventId)[0];
     // Find the correct user credentials.
     const user = users[rxDbObj.providerType].filter(
-      indivAcc => indivAcc.owner === rxDbObj.email
+      (indivAcc) => indivAcc.owner === rxDbObj.email
     )[0];
 
     // Declare here for ease over all providers, not used for create events.
@@ -613,8 +618,8 @@ const handlePendingActions = async (users, actions, db) => {
   const noDuplicateUsers = result.reduce((a, b) => {
     if (
       b.status === 'fulfilled' && // ensure that it is a success
-      !a.some(singleUser => _.isEqual(singleUser.v.user, b.v.user)) && // ensure that the same user is not inside
-      !(appendedUsers.filter(appendedUser => _.isEqual(appendedUser, b.v.user)).length > 1) // ensure that the return array does not contain that user
+      !a.some((singleUser) => _.isEqual(singleUser.v.user, b.v.user)) && // ensure that the same user is not inside
+      !(appendedUsers.filter((appendedUser) => _.isEqual(appendedUser, b.v.user)).length > 1) // ensure that the return array does not contain that user
     ) {
       a.push(b);
       appendedUsers.push(b.v.user);
@@ -624,7 +629,7 @@ const handlePendingActions = async (users, actions, db) => {
 
   // For every successful user, it will map a retrieve stored event for it.
   // Returns multiple action due to filtering on UI selector, updates specific providers only, not all of them.
-  const resultingAction = noDuplicateUsers.map(indivAcc =>
+  const resultingAction = noDuplicateUsers.map((indivAcc) =>
     retrieveStoreEvents(indivAcc.v.user.providerType, indivAcc.v.user)
   );
 
@@ -778,4 +783,4 @@ const handleMergeEvents = async (localObj, serverObj, db, type, user) => {
     return editEventSuccess(serverObj);
   }
 };
-// ------------------------------------ PENDING ACTIONS ------------------------------------ //
+// -------------------------------- PENDING ACTIONS -------------------------------- //

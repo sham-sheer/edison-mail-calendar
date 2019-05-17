@@ -25,18 +25,20 @@ import { asyncGetSingleExchangeEvent, asyncDeleteExchangeEvent } from '../../uti
 import getDb from '../../db';
 import * as Providers from '../../utils/constants';
 
-export const retrieveEventsEpic = action$ =>
+export const retrieveEventsEpic = (action$) =>
   action$.pipe(
     ofType(RETRIEVE_STORED_EVENTS),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(getDb()).pipe(
-        mergeMap(db =>
+        mergeMap((db) =>
           from(db.events.find().exec()).pipe(
-            map(events =>
-              events.filter(singleEvent => singleEvent.providerType === action.payload.providerType)
+            map((events) =>
+              events.filter(
+                (singleEvent) => singleEvent.providerType === action.payload.providerType
+              )
             ),
-            map(events =>
-              events.map(singleEvent => ({
+            map((events) =>
+              events.map((singleEvent) => ({
                 id: singleEvent.id,
                 end: singleEvent.end,
                 start: singleEvent.start,
@@ -50,41 +52,41 @@ export const retrieveEventsEpic = action$ =>
                 hide: singleEvent.hide
               }))
             ),
-            map(results => updateStoredEvents(results, action.payload.user))
+            map((results) => updateStoredEvents(results, action.payload.user))
           )
         )
       )
     )
   );
 
-export const storeEventsEpic = action$ =>
+export const storeEventsEpic = (action$) =>
   action$.pipe(
     ofType(BEGIN_STORE_EVENTS),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(storeEvents(action.payload)).pipe(
-        map(results => successStoringEvents(results)),
-        catchError(error => failStoringEvents(error))
+        map((results) => successStoringEvents(results)),
+        catchError((error) => failStoringEvents(error))
       )
     )
   );
 
-export const beginStoreEventsEpic = action$ =>
+export const beginStoreEventsEpic = (action$) =>
   action$.pipe(
     ofType(POST_EVENT_SUCCESS, GET_EVENTS_SUCCESS),
-    map(action => beginStoringEvents(action.payload))
+    map((action) => beginStoringEvents(action.payload))
   );
 
-export const deleteEventEpics = action$ =>
+export const deleteEventEpics = (action$) =>
   action$.pipe(
     ofType(DELETE_EVENT_BEGIN),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(deleteEvent(action.payload)).pipe(
-        map(resp => retrieveStoreEvents(resp.providerType, resp.user))
+        map((resp) => retrieveStoreEvents(resp.providerType, resp.user))
       )
     )
   );
 
-const storeEvents = async payload => {
+const storeEvents = async (payload) => {
   const db = await getDb();
   const addedEvents = [];
   const dbUpsertPromises = [];
@@ -117,7 +119,7 @@ const storeEvents = async payload => {
   return addedEvents;
 };
 
-const deleteEvent = async id => {
+const deleteEvent = async (id) => {
   // Get database
   const db = await getDb();
   const query = db.events
