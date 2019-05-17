@@ -61,3 +61,5 @@ eventsdb-rxdb-0-events
 eventsdb-rxdb-0-pendingactions
 eventsdb-rxdb-0-persons
 eventsdb-rxdb-0-recurrencepatterns
+
+package-lock.json

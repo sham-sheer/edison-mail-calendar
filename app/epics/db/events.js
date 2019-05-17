@@ -133,6 +133,7 @@ const deleteEvent = async id => {
     .find()
     .where('id')
     .eq(id);
+
   const datas = await query.exec();
   if (datas.length !== 1) {
     console.error('Omg, actually a collision?');
@@ -150,10 +151,7 @@ const deleteEvent = async id => {
   if (users.length !== 1) {
     console.error('Omg, actually a collision?');
   }
-
   const user = users[0];
-
-  // console.log(data);
 
   // Edge case, means user created an event offline, and is yet to upload it to service.
   // In that case, we shuld remove it from pending action if it exists.
