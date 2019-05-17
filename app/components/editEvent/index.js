@@ -17,7 +17,7 @@ import Conference from './conference';
 import Checkbox from './checkbox';
 import getDb from '../../db';
 import { loadClient, editGoogleEvent } from '../../utils/client/google';
-import { findSingleEventById, updateEvent } from '../../utils/client/exchange';
+import { asyncGetSingleExchangeEvent, asyncUpdateExchangeEvent } from '../../utils/client/exchange';
 import './index.css';
 /* global google */
 import {
@@ -137,12 +137,10 @@ export default class EditEvent extends React.Component {
         const editResp = await editGoogleEvent(state.id, eventPatch);
         return editResp;
       case EXCHANGE:
-        const user = props.providers.EXCHANGE.filter(
-          object => object.email === state.owner
-        )[0]; // this validates which user the event belongs to, by email.
+        const user = props.providers.EXCHANGE.filter(object => object.email === state.owner)[0]; // this validates which user the event belongs to, by email.
 
         try {
-          const singleAppointment = await findSingleEventById(
+          const singleAppointment = await asyncGetSingleExchangeEvent(
             user.email,
             user.password,
             'https://outlook.office365.com/Ews/Exchange.asmx',
@@ -152,15 +150,11 @@ export default class EditEvent extends React.Component {
           singleAppointment.Subject = state.title;
           singleAppointment.Location = state.place.name;
 
-          await updateEvent(singleAppointment, user, () => {
+          await asyncUpdateExchangeEvent(singleAppointment, user, () => {
             props.history.push('/');
           });
         } catch (error) {
-          console.log(
-            '(editEvent) Error, retrying with pending action!',
-            error,
-            state.id
-          );
+          console.log('(editEvent) Error, retrying with pending action!', error, state.id);
 
           const db = await getDb();
           // Check if a pending action currently exist for the current item.
@@ -265,11 +259,7 @@ export default class EditEvent extends React.Component {
               dropDownTime={dropDownTime('')}
             />
             <span>to</span>
-            <Date
-              dayProps={this.handleChange}
-              name="endDay"
-              startDate={state.startDay}
-            />
+            <Date dayProps={this.handleChange} name="endDay" startDate={state.startDay} />
             <Time
               timeProps={this.handleChange}
               currentTime={state.endTime}

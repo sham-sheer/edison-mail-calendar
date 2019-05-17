@@ -37,7 +37,8 @@ export const retrieveCaldavEventsEpic = action$ =>
                 originalId: singleEvent.originalId,
                 creator: singleEvent.creator,
                 isRecurring: singleEvent.isRecurring,
-                isModifiedThenDeleted: singleEvent.isModifiedThenDeleted
+                isModifiedThenDeleted: singleEvent.isModifiedThenDeleted,
+                hide: singleEvent.hide
               }))
             ),
             // map(events => updateStoredEvents(events))
@@ -46,9 +47,7 @@ export const retrieveCaldavEventsEpic = action$ =>
                 switchMap(resultPromises =>
                   merge(resultPromises).pipe(
                     switchMap(eventPromises =>
-                      from(eventPromises).pipe(
-                        map(events => updateStoredEvents(events))
-                      )
+                      from(eventPromises).pipe(map(events => updateStoredEvents(events)))
                     )
                   )
                 )
@@ -65,12 +64,8 @@ export const storeAccountEpics = action$ =>
     ofType(CalDavDbActionCreators.BEGIN_STORE_CALDAV_OBJECTS),
     switchMap(action =>
       from(storeCaldav(action.payload)).pipe(
-        map(payload =>
-          CalDavDbActionCreators.successStoreCaldavObjects(payload)
-        ),
-        catchError(error =>
-          of(CalDavDbActionCreators.failStoreCaldavObjects(error))
-        )
+        map(payload => CalDavDbActionCreators.successStoreCaldavObjects(payload)),
+        catchError(error => of(CalDavDbActionCreators.failStoreCaldavObjects(error)))
       )
     )
   );

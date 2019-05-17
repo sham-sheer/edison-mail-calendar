@@ -237,15 +237,11 @@ export default class View extends React.Component {
           if (singleProviderUserData.providerType === ProviderTypes.EXCHANGE) {
             // Might wanna rethink this approach as it might be good for some clean up here.
             props.onStartGetExchangeAuth(
-              this.filterUserOnStart(
-                singleProviderUserData,
-                ProviderTypes.EXCHANGE
-              )
+              this.filterUserOnStart(singleProviderUserData, ProviderTypes.EXCHANGE)
             );
           } else {
             const now = new Date().getTime();
-            const isExpired =
-              now > parseInt(singleProviderUserData.accessTokenExpiry, 10);
+            const isExpired = now > parseInt(singleProviderUserData.accessTokenExpiry, 10);
 
             // console.log(singleProviderUserData,this.filterUserOnStart(singleProviderUserData,ProviderTypes.GOOGLE));
             // console.log(now,singleProviderUserData.accessTokenExpiry,isExpired,providerUserData);
@@ -255,18 +251,12 @@ export default class View extends React.Component {
               switch (singleProviderUserData.providerType) {
                 case ProviderTypes.GOOGLE:
                   props.onStartGetGoogleAuth(
-                    this.filterUserOnStart(
-                      singleProviderUserData,
-                      ProviderTypes.GOOGLE
-                    )
+                    this.filterUserOnStart(singleProviderUserData, ProviderTypes.GOOGLE)
                   );
                   break;
                 case ProviderTypes.OUTLOOK:
                   props.onStartGetOutlookAuth(
-                    this.filterUserOnStart(
-                      singleProviderUserData,
-                      ProviderTypes.OUTLOOK
-                    )
+                    this.filterUserOnStart(singleProviderUserData, ProviderTypes.OUTLOOK)
                   );
                   break;
                 default:
@@ -276,18 +266,12 @@ export default class View extends React.Component {
               switch (singleProviderUserData.providerType) {
                 case ProviderTypes.GOOGLE:
                   props.onExpiredGoogle(
-                    this.filterUserOnStart(
-                      singleProviderUserData,
-                      ProviderTypes.GOOGLE
-                    )
+                    this.filterUserOnStart(singleProviderUserData, ProviderTypes.GOOGLE)
                   );
                   break;
                 case ProviderTypes.OUTLOOK:
                   props.onExpiredOutlook(
-                    this.filterUserOnStart(
-                      singleProviderUserData,
-                      ProviderTypes.OUTLOOK
-                    )
+                    this.filterUserOnStart(singleProviderUserData, ProviderTypes.OUTLOOK)
                   );
                   break;
                 default:
@@ -337,9 +321,7 @@ export default class View extends React.Component {
     const { props } = this;
 
     const nextEvents = events.map(existingEvent =>
-      existingEvent.id === event.id
-        ? { ...existingEvent, start, end }
-        : existingEvent
+      existingEvent.id === event.id ? { ...existingEvent, start, end } : existingEvent
     );
     props.updateEvents(nextEvents);
   };
@@ -359,12 +341,8 @@ export default class View extends React.Component {
     this.setState({
       isShowEvent: true,
       currentEvent: event,
-      currentEventStartDateTime: moment(event.start).format(
-        'D, MMMM YYYY, h:mm a'
-      ),
-      currentEventEndDateTime: moment(event.end).format(
-        'D, MMMM Do YYYY, h:mm a'
-      )
+      currentEventStartDateTime: moment(event.start).format('D, MMMM YYYY, h:mm a'),
+      currentEventEndDateTime: moment(event.end).format('D, MMMM Do YYYY, h:mm a')
     });
   };
 
@@ -440,9 +418,7 @@ export default class View extends React.Component {
       style={customStyles}
       contentLabel="Event Modal"
     >
-      <h2 ref={subtitle => (this.subtitle = subtitle)}>
-        {state.currentEvent.title}
-      </h2>
+      <h2 ref={subtitle => (this.subtitle = subtitle)}>{state.currentEvent.title}</h2>
       <h4>
         {state.currentEventStartDateTime} - {state.currentEventEndDateTime}
       </h4>
@@ -578,23 +554,17 @@ export default class View extends React.Component {
           role="button"
           tabIndex="0"
           className="waves-effect waves-light btn"
-          onClick={() =>
-            props.beginGetOutlookEvents(props.providers.OUTLOOK[0])
-          }
+          onClick={() => props.beginGetOutlookEvents(props.providers.OUTLOOK[0])}
         >
-          <i className="material-icons left">cloud_download</i>Get Outlook
-          Events
+          <i className="material-icons left">cloud_download</i>Get Outlook Events
         </a>
         <a
           role="button"
           tabIndex="0"
           className="waves-effect waves-light btn"
-          onClick={() =>
-            props.beginGetExchangeEvents(props.providers.EXCHANGE[0])
-          }
+          onClick={() => props.beginGetExchangeEvents(props.providers.EXCHANGE[0])}
         >
-          <i className="material-icons left">cloud_download</i>Get Exchange
-          Events
+          <i className="material-icons left">cloud_download</i>Get Exchange Events
         </a>
         <a
           role="button"

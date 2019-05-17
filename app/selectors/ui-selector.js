@@ -10,7 +10,7 @@ const getFilteredEvents = createSelector(
   normalizedData => {
     const data = Object.values(normalizedData);
     const formatedEvents = data
-      .filter(obj => obj.hide === false)
+      // .filter(obj => obj.hide === false)
       .map(eachEvent => {
         if (eachEvent.end.date === undefined) {
           return {

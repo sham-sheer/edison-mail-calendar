@@ -39,7 +39,7 @@ export const filterExchangeUser = jsonObj => ({
   password: jsonObj.password
 });
 
-export const asyncExchangeRequest = async (username, password, url) => {
+export const asyncGetAllExchangeEvents = async (username, password, url) => {
   const exch = new ExchangeService();
   exch.Url = new Uri(url);
 
@@ -83,10 +83,7 @@ export const asyncExchangeRequest = async (username, password, url) => {
     arrayOfIds.push(new ItemId(event.Id.UniqueId));
   });
 
-  const additonalProps = new PropertySet(
-    BasePropertySet.IdOnly,
-    ItemSchema.Body
-  );
+  const additonalProps = new PropertySet(BasePropertySet.IdOnly, ItemSchema.Body);
   additonalProps.RequestedBodyType = BodyType.Text;
 
   const exchangeEventsWithBody = [];
@@ -109,10 +106,21 @@ export const asyncExchangeRequest = async (username, password, url) => {
   return exchangeEventsWithBody;
 };
 
-export const getAllEvents = (username, password, url) =>
-  asyncExchangeRequest(username, password, url);
+export const asyncGetSingleExchangeEvent = async (username, password, url, itemId) => {
+  try {
+    const exch = new ExchangeService();
+    exch.Url = new Uri(url);
+    exch.Credentials = new ExchangeCredentials(username, password);
 
-export const createEvent = async (username, password, url, payload) => {
+    const appointment = await Appointment.Bind(exch, new ItemId(itemId));
+    return appointment;
+  } catch (error) {
+    console.log('(asyncGetSingleExchangeEvent) Error: ', error);
+    throw error;
+  }
+};
+
+export const asyncCreateExchangeEvent = async (username, password, url, payload) => {
   try {
     const exch = new ExchangeService();
     exch.Url = new Uri(url);
@@ -122,17 +130,10 @@ export const createEvent = async (username, password, url, payload) => {
 
     newEvent.Subject = payload.summary;
     newEvent.Body = new MessageBody('');
-    newEvent.Start = new DateTime(
-      moment.tz(payload.start.dateTime, payload.start.timezone)
-    );
-    newEvent.End = new DateTime(
-      moment.tz(payload.end.dateTime, payload.end.timezone)
-    );
+    newEvent.Start = new DateTime(moment.tz(payload.start.dateTime, payload.start.timezone));
+    newEvent.End = new DateTime(moment.tz(payload.end.dateTime, payload.end.timezone));
     return await newEvent
-      .Save(
-        WellKnownFolderName.Calendar,
-        SendInvitationsMode.SendToAllAndSaveCopy
-      )
+      .Save(WellKnownFolderName.Calendar, SendInvitationsMode.SendToAllAndSaveCopy)
       .then(
         async () => {
           const item = await Item.Bind(exch, newEvent.Id);
@@ -168,21 +169,18 @@ export const createEvent = async (username, password, url, payload) => {
         }
       );
   } catch (error) {
-    console.log('(createEvent) Error: ', error);
+    console.log('(asyncCreateExchangeEvent) Error: ', error);
     throw error;
   }
 };
 
-export const updateEvent = async (singleAppointment, user, callback) => {
+export const asyncUpdateExchangeEvent = async (singleAppointment, user, callback) => {
   try {
     return await singleAppointment
-      .Update(
-        ConflictResolutionMode.AlwaysOverwrite,
-        SendInvitationsOrCancellationsMode.SendToNone
-      )
+      .Update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsOrCancellationsMode.SendToNone)
       .then(
         async success => {
-          const updatedItem = await findSingleEventById(
+          const updatedItem = await asyncGetSingleExchangeEvent(
             user.email,
             user.password,
             'https://outlook.office365.com/Ews/Exchange.asmx',
@@ -190,12 +188,7 @@ export const updateEvent = async (singleAppointment, user, callback) => {
           );
           const db = await getDb();
           const doc = await db.events.atomicUpsert(
-            ProviderTypes.filterIntoSchema(
-              updatedItem,
-              ProviderTypes.EXCHANGE,
-              user.email,
-              false
-            )
+            ProviderTypes.filterIntoSchema(updatedItem, ProviderTypes.EXCHANGE, user.email, false)
           );
           const data = await db.events.find().exec();
           callback();
@@ -206,44 +199,12 @@ export const updateEvent = async (singleAppointment, user, callback) => {
         }
       );
   } catch (error) {
-    console.log('(updateEvent) Error: ', error);
+    console.log('(asyncUpdateExchangeEvent) Error: ', error);
     throw error;
   }
 };
 
-export const findSingleEventById = async (username, password, url, itemId) => {
-  try {
-    const exch = new ExchangeService();
-    exch.Url = new Uri(url);
-    exch.Credentials = new ExchangeCredentials(username, password);
-
-    const appointment = await Appointment.Bind(exch, new ItemId(itemId));
-    return appointment;
-  } catch (error) {
-    console.log('(findSingleEventById) Error: ', error);
-    throw error;
-  }
-};
-
-export const asyncDeleteSingleEventById = async (
-  username,
-  password,
-  url,
-  itemId
-) => {
-  const exch = new ExchangeService();
-  exch.Url = new Uri(url);
-  exch.Credentials = new ExchangeCredentials(username, password);
-
-  const item = await Appointment.Bind(exch, new ItemId(itemId));
-  await item.Delete(DeleteMode.MoveToDeletedItems);
-};
-
-export const exchangeDeleteEvent = async (
-  singleAppointment,
-  user,
-  callback
-) => {
+export const asyncDeleteExchangeEvent = async (singleAppointment, user, callback) => {
   try {
     return await singleAppointment.Delete(DeleteMode.MoveToDeletedItems).then(
       async success => {

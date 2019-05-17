@@ -30,18 +30,12 @@ export default class AddEvent extends Component {
   componentWillMount() {
     const { props } = this;
 
-    const startDateParsed = moment(props.match.params.start).format(
-      'YYYY-MM-DDThh:mm a'
-    );
-    const endDateParsed = moment(props.match.params.end).format(
-      'YYYY-MM-DDThh:mm a'
-    );
+    const startDateParsed = moment(props.match.params.start).format('YYYY-MM-DDThh:mm a');
+    const endDateParsed = moment(props.match.params.end).format('YYYY-MM-DDThh:mm a');
     console.log(props.match.params.end);
     const startDateParsedInUTC = this.processStringForUTC(startDateParsed);
     const endDateParsedInUTC = this.processStringForUTC(endDateParsed);
-    console.log(
-      `${moment(startDateParsedInUTC).format()} ${endDateParsedInUTC}`
-    );
+    console.log(`${moment(startDateParsedInUTC).format()} ${endDateParsedInUTC}`);
     this.setState({
       startParsed: startDateParsedInUTC,
       endParsed: endDateParsedInUTC,
@@ -64,28 +58,13 @@ export default class AddEvent extends Component {
         hourInStringInUTC.toString() +
         dateInString.substring(END_INDEX_OF_HOUR, END_INDEX_OF_MINUTE);
     } else {
-      dateInStringInUTC = dateInString.substring(
-        START_INDEX_OF_DATE,
-        END_INDEX_OF_MINUTE
-      );
+      dateInStringInUTC = dateInString.substring(START_INDEX_OF_DATE, END_INDEX_OF_MINUTE);
     }
     return dateInStringInUTC;
   };
 
-  handleTitleChange = e => {
-    this.setState({ title: e.target.value });
-  };
-
-  handleDescChange = e => {
-    this.setState({ desc: e.target.value });
-  };
-
-  handleChangeStartTime = e => {
-    this.setState({ startParsed: e.target.value });
-  };
-
-  handleChangeEndTime = e => {
-    this.setState({ endParsed: e.target.value });
+  handleChange = event => {
+    this.setState({ [event.target.name]: event.target.value });
   };
 
   handleSubmit = async e => {
@@ -118,10 +97,6 @@ export default class AddEvent extends Component {
     }
   };
 
-  handleProvider = e => {
-    this.setState({ selectedProvider: e.target.value });
-  };
-
   render() {
     const providers = [];
     const { props, state } = this;
@@ -136,15 +111,17 @@ export default class AddEvent extends Component {
           <FormControl
             type="text"
             value={state.value}
+            name="title"
             placeholder="Enter title of Event"
-            onChange={this.handleTitleChange}
+            onChange={this.handleChange}
           />
 
           {/* Text Area */}
           <FormControl
             componentClass="textarea"
             placeholder="Description"
-            onChange={this.handleDescChange}
+            name="desc"
+            onChange={this.handleChange}
           />
 
           {/* Start Time and Date */}
@@ -157,7 +134,8 @@ export default class AddEvent extends Component {
             InputLabelProps={{
               shrink: true
             }}
-            onChange={this.handleChangeStartTime}
+            name="startParsed"
+            onChange={this.handleChange}
           />
 
           {/* End Time and Date */}
@@ -170,7 +148,8 @@ export default class AddEvent extends Component {
             InputLabelProps={{
               shrink: true
             }}
-            onChange={this.handleChangeEndTime}
+            name="endParsed"
+            onChange={this.handleChange}
           />
 
           <TextField
@@ -178,9 +157,10 @@ export default class AddEvent extends Component {
             select
             label="Select email"
             value={state.selectedProvider}
-            onChange={this.handleProvider}
+            onChange={this.handleChange}
             helperText="Please select which provider"
             margin="normal"
+            name="selectedProvider"
           >
             {providers.map(option => (
               // Currently an issue: https://github.com/mui-org/material-ui/issues/10845

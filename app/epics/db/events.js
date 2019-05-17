@@ -21,11 +21,7 @@ import {
   deleteEventSuccess
 } from '../../actions/events';
 import { deleteGoogleEvent, loadClient } from '../../utils/client/google';
-import {
-  asyncDeleteSingleEventById,
-  findSingleEventById,
-  exchangeDeleteEvent
-} from '../../utils/client/exchange';
+import { asyncGetSingleExchangeEvent, asyncDeleteExchangeEvent } from '../../utils/client/exchange';
 import getDb from '../../db';
 import * as Providers from '../../utils/constants';
 
@@ -37,10 +33,7 @@ export const retrieveEventsEpic = action$ =>
         mergeMap(db =>
           from(db.events.find().exec()).pipe(
             map(events =>
-              events.filter(
-                singleEvent =>
-                  singleEvent.providerType === action.payload.providerType
-              )
+              events.filter(singleEvent => singleEvent.providerType === action.payload.providerType)
             ),
             map(events =>
               events.map(singleEvent => ({
@@ -99,10 +92,7 @@ const storeEvents = async payload => {
 
   for (const dbEvent of data) {
     // #TO-DO, we need to figure out how to handle recurrence, for now, we ignore
-    if (
-      dbEvent.recurringEventId !== undefined &&
-      dbEvent.recurringEventId !== null
-    ) {
+    if (dbEvent.recurringEventId !== undefined && dbEvent.recurringEventId !== null) {
       continue;
     }
 
@@ -128,18 +118,21 @@ const storeEvents = async payload => {
 };
 
 const deleteEvent = async id => {
+  // Get database
   const db = await getDb();
   const query = db.events
     .find()
     .where('id')
     .eq(id);
 
+  // Find the proper item on database
   const datas = await query.exec();
   if (datas.length !== 1) {
     console.error('Omg, actually a collision?');
   }
   const data = datas[0];
 
+  // Find the proper user on database
   const users = await db.persons
     .find()
     .where('providerType')
@@ -170,6 +163,7 @@ const deleteEvent = async id => {
     };
   }
 
+  // Based off which provider, we will have different delete functions.
   switch (data.providerType) {
     case Providers.GOOGLE:
       await loadClient();
@@ -185,36 +179,37 @@ const deleteEvent = async id => {
         .where('originalId')
         .eq(data.get('originalId'));
       try {
-        const singleAppointment = await findSingleEventById(
+        // asyncGetSingleExchangeEvent will throw error when no internet or event missing.
+        const singleAppointment = await asyncGetSingleExchangeEvent(
           user.email,
           user.password,
           'https://outlook.office365.com/Ews/Exchange.asmx',
           data.get('originalId')
         );
 
-        await exchangeDeleteEvent(singleAppointment, user, () => {
-          // console.log('(Exchange) First attempt delete success!');
+        await asyncDeleteExchangeEvent(singleAppointment, user, () => {
+          // Lambda for expansion if needed.
         });
 
         await deleteDoc.remove();
       } catch (error) {
-        // console.log('Error, retrying with pending action!', error);
-
         // This means item has been deleted on server, maybe by another user
         // Handle this differently.
         if (error.ErrorCode === 249) {
           // Just remove it from database instead, and break;
-          console.log('Edge case, just removing it from db.');
           await deleteDoc.remove();
           break;
         }
 
+        // Upsert it to the pending action, let pending action automatically handle it.
         db.pendingactions.upsert({
           uniqueId: uniqid(),
           eventId: data.get('originalId'),
           status: 'pending',
           type: 'delete'
         });
+
+        // Hide the item, and set it to local as it has been updated.
         await deleteDoc.update({
           $set: {
             hide: true,
@@ -228,6 +223,7 @@ const deleteEvent = async id => {
       break;
   }
 
+  // Return which user has been edited.
   return {
     providerType: data.providerType,
     user: Providers.filterUsersIntoSchema(user)
