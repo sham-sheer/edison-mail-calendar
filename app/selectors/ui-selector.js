@@ -12,7 +12,7 @@ const getFilteredEvents = createSelector(
     const formatedEvents = data.map(eachEvent => {
       if (eachEvent.end.date === undefined) {
         return {
-          id: uniqid(),
+          id: eachEvent.id,
           title: eachEvent.summary,
           end: new Date(eachEvent.end.dateTime),
           start: new Date(eachEvent.start.dateTime)
@@ -20,7 +20,7 @@ const getFilteredEvents = createSelector(
       }
 
       return {
-        id: uniqid(),
+        id: eachEvent.id,
         title: eachEvent.summary,
         end: new Date(moment(eachEvent.end.date).format()),
         start: new Date(moment(eachEvent.start.date).format())

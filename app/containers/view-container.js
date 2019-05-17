@@ -21,7 +21,8 @@ import {
 } from '../actions/events';
 import {
   beginRetrieveCaldavEvents,
-  resetCaldavAccount
+  resetCaldavAccount,
+  beginDeleteCalendarObject
 } from '../actions/caldav';
 import getFilteredEvents from '../selectors/ui-selector';
 
@@ -57,7 +58,9 @@ const mapDispatchToProps = dispatch => ({
   onExpiredGoogle: user => dispatch(expiredGoogleAuth(user)),
 
   beginRetrieveCalDavEvents: () => dispatch(beginRetrieveCaldavEvents()),
-  resetCaldavAccount: () => dispatch(resetCaldavAccount())
+  resetCaldavAccount: () => dispatch(resetCaldavAccount()),
+  beginDeleteCalendarObject: payload =>
+    dispatch(beginDeleteCalendarObject(payload))
 });
 
 export default connect(
