@@ -52,3 +52,12 @@ npm-debug.log.*
 
 #Credentials
 app/utils/Credentials.js
+
+eventsdb-rxdb-0-_admin
+eventsdb-rxdb-0-_collections
+eventsdb-rxdb-0-calendars
+eventsdb-rxdb-0-eventpersons
+eventsdb-rxdb-0-events
+eventsdb-rxdb-0-pendingactions
+eventsdb-rxdb-0-persons
+eventsdb-rxdb-0-recurrencepatterns
