@@ -83,7 +83,10 @@ export const deleteCalendarObjectEpics = action$ =>
               of(CalDavActionCreators.failDeleteCalendarObject(error))
             )
           );
-        })
+        }),
+        catchError(error =>
+          of(CalDavActionCreators.failDeleteCalendarObject(error))
+        )
       )
     )
   );
@@ -104,10 +107,14 @@ export const failDeleteCalendarObjectEpics = action$ =>
 
 const removeEventFromDb = async eventId => {
   const db = await getDb();
-  const eventQuery = db.events
-    .find()
-    .where('id')
-    .eq(eventId);
-  const removedEvent = await eventQuery.remove();
-  return removedEvent;
+  try {
+    const eventQuery = db.events
+      .find()
+      .where('id')
+      .eq(eventId);
+    const removedEvent = await eventQuery.remove();
+    return removedEvent;
+  } catch (e) {
+    return e;
+  }
 };
