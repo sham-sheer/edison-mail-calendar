@@ -4,9 +4,15 @@ import {
   RETRIEVE_STORED_EVENTS,
   DUPLICATE_ACTION
 } from '../actions/db/events';
+import {
+  BEGIN_DELETE_CALENDAR_OBJECT,
+  FAIL_DELETE_CALENDAR_OBJECT
+} from '../actions/caldav';
 
 const initialState = {
-  calEvents: []
+  calEvents: [],
+  deletedEventId: '',
+  deleteError: ''
 };
 
 const mergeEvents = (oldEvents, newItems) => {
@@ -22,6 +28,22 @@ const mergeEvents = (oldEvents, newItems) => {
   return newPayload;
 };
 
+const hideEvent = (calEvents, deletedEventId) => {
+  const newEvents = [];
+  calEvents.forEach(calEvent => {
+    if (calEvent.id !== deletedEventId) {
+      newEvents.push(calEvent);
+    }
+  });
+  return newEvents;
+};
+
+const addHideOperator = calEvents =>
+  calEvents.map(calEvent => {
+    calEvent.hide = false;
+    return calEvent;
+  });
+
 export default function eventsReducer(state = initialState, action) {
   if (action === undefined) {
     return state;
@@ -34,7 +56,8 @@ export default function eventsReducer(state = initialState, action) {
       // return Object.assign({}, state, { calEvents: action.payload });
       // return Object.assign({}, state, { calEvents: state.calEvents.concat(action.payload) });
       // return Object.assign({}, state, { calEvents: mergeEvents(state.calEvents, action.payload) });
-      return Object.assign({}, state, { calEvents: action.payload });
+      const events = addHideOperator(action.payload);
+      return Object.assign({}, state, { calEvents: events });
     case SUCCESS_STORED_EVENTS: {
       // debugger;
       const newEvents = mergeEvents(state.calEvents, action.payload);
@@ -42,6 +65,14 @@ export default function eventsReducer(state = initialState, action) {
     }
     case DUPLICATE_ACTION:
       return state;
+    case BEGIN_DELETE_CALENDAR_OBJECT: {
+      return Object.assign({}, state, { deletedEventId: action.payload });
+    }
+    case FAIL_DELETE_CALENDAR_OBJECT:
+      return Object.assign({}, state, {
+        deletedEventId: '',
+        deleteError: action.payload
+      });
     default:
       return state;
   }

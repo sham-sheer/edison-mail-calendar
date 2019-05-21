@@ -31,7 +31,8 @@ const mapStateToProps = state => ({
   initialSync: state.events.initialSync,
   isAuth: state.auth.isAuth,
   providers: state.auth.providers,
-  expiredProviders: state.auth.expiredProviders
+  expiredProviders: state.auth.expiredProviders,
+  deletedEventId: state.events.deletedEventId
 });
 
 const mapDispatchToProps = dispatch => ({

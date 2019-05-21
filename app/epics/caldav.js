@@ -61,7 +61,7 @@ export const deleteCalendarObjectEpics = action$ =>
   action$.pipe(
     ofType(CalDavActionCreators.BEGIN_DELETE_CALENDAR_OBJECT),
     switchMap(action =>
-      from(removeEventFromDb(action.payload.id)).pipe(
+      from(removeEventFromDb(action.payload)).pipe(
         switchMap(resp => {
           const respJSON = resp[0].toJSON();
           const calendarObject = {
@@ -88,13 +88,26 @@ export const deleteCalendarObjectEpics = action$ =>
     )
   );
 
+export const successDeleteCalendarObjectEpics = action$ =>
+  action$.pipe(
+    ofType(CalDavActionCreators.SUCCESS_DELETE_CALENDAR_OBJECT),
+    map(() => ({
+      type: 'BEGIN_RETRIEVE_CALDAV_EVENTS'
+    }))
+  );
+
+export const failDeleteCalendarObjectEpics = action$ =>
+  action$.pipe(
+    ofType(CalDavActionCreators.FAIL_DELETE_CALENDAR_OBJECT),
+    map(action => console.log(`Failed to delete Event. Error: ${action.error}`))
+  );
+
 const removeEventFromDb = async eventId => {
   const db = await getDb();
   const eventQuery = db.events
     .find()
     .where('id')
     .eq(eventId);
-  debugger;
   const removedEvent = await eventQuery.remove();
   return removedEvent;
 };

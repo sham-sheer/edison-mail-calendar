@@ -409,19 +409,28 @@ export default class View extends React.Component {
   deleteEvent = () => {
     const { props } = this;
     const { state } = this;
-    props.beginDeleteEvent(state.currentEvent.id);
-    // props.beginDeleteCalendarObject(state.currentEvent);
+    // props.beginDeleteEvent(state.currentEvent.id);
+    props.beginDeleteCalendarObject(state.currentEvent.id);
+    // props.beginDeleteCalendarObjec
     this.closeModal();
+  };
+
+  getVisibleEvents = () => {
+    const { props } = this;
+    const { events } = props;
+    const { deletedEventId } = props;
+    const visibleEvents = [];
+    return events.filter(event => event.id !== deletedEventId);
   };
 
   /* Render functions */
   renderCalendar = props => {
-    const { events } = props;
+    const visibleEvents = this.getVisibleEvents();
     return (
       <DragAndDropCalendar
         selectable
         localizer={localizer}
-        events={events}
+        events={visibleEvents}
         views={{
           month: true,
           day: true

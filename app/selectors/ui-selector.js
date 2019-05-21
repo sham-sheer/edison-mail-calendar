@@ -15,7 +15,8 @@ const getFilteredEvents = createSelector(
           id: eachEvent.id,
           title: eachEvent.summary,
           end: new Date(eachEvent.end.dateTime),
-          start: new Date(eachEvent.start.dateTime)
+          start: new Date(eachEvent.start.dateTime),
+          hide: eachEvent.hide
         };
       }
 
@@ -23,7 +24,8 @@ const getFilteredEvents = createSelector(
         id: eachEvent.id,
         title: eachEvent.summary,
         end: new Date(moment(eachEvent.end.date).format()),
-        start: new Date(moment(eachEvent.start.date).format())
+        start: new Date(moment(eachEvent.start.date).format()),
+        hide: eachEvent.hide
       };
     });
     return formatedEvents;

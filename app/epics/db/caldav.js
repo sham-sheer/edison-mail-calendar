@@ -43,10 +43,10 @@ export const retrieveCaldavEventsEpic = action$ =>
             // map(events => updateStoredEvents(events))
             switchMap(results =>
               from(PARSER.expandRecurEvents(results)).pipe(
-                switchMap(resultPromises =>
-                  merge(resultPromises).pipe(
-                    switchMap(eventPromises =>
-                      from(eventPromises).pipe(
+                switchMap(eventPromises =>
+                  merge(eventPromises).pipe(
+                    switchMap(mergedEventPromises =>
+                      from(mergedEventPromises).pipe(
                         map(events => updateStoredEvents(events))
                       )
                     )
