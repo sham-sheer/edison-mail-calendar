@@ -110,7 +110,7 @@ const removeEventFromDb = async eventId => {
   try {
     const eventQuery = db.events
       .find()
-      .where('id')
+      .where('originalId')
       .eq(eventId);
     const removedEvent = await eventQuery.remove();
     return removedEvent;

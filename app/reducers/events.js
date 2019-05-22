@@ -38,12 +38,6 @@ const hideEvent = (calEvents, deletedEventId) => {
   return newEvents;
 };
 
-const addHideOperator = calEvents =>
-  calEvents.map(calEvent => {
-    calEvent.hide = false;
-    return calEvent;
-  });
-
 export default function eventsReducer(state = initialState, action) {
   if (action === undefined) {
     return state;
@@ -56,8 +50,7 @@ export default function eventsReducer(state = initialState, action) {
       // return Object.assign({}, state, { calEvents: action.payload });
       // return Object.assign({}, state, { calEvents: state.calEvents.concat(action.payload) });
       // return Object.assign({}, state, { calEvents: mergeEvents(state.calEvents, action.payload) });
-      const events = addHideOperator(action.payload);
-      return Object.assign({}, state, { calEvents: events });
+      return Object.assign({}, state, { calEvents: action.payload });
     case SUCCESS_STORED_EVENTS: {
       // debugger;
       const newEvents = mergeEvents(state.calEvents, action.payload);

@@ -56,8 +56,8 @@ const configureStore = (initialState?: counterStateType) => {
   enhancers.push(
     applyMiddleware(
       ...middleware,
-      authBeginMiddleware,
-      authSuccessMiddleware,
+      // authBeginMiddleware,
+      // authSuccessMiddleware,
       epicMiddleware,
       loggerMiddleware
     )
@@ -69,8 +69,8 @@ const configureStore = (initialState?: counterStateType) => {
     rootReducer,
     composeEnhancers(
       applyMiddleware(
-        authBeginMiddleware,
-        authSuccessMiddleware,
+        // authBeginMiddleware,
+        // authSuccessMiddleware,
         epicMiddleware,
         loggerMiddleware
       )

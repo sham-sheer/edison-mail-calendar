@@ -12,53 +12,91 @@ import PARSER from '../../utils/parser';
 const dav = require('dav');
 const ICAL = require('ical.js');
 
+// export const retrieveCaldavEventsEpic = action$ =>
+//   action$.pipe(
+//     ofType(BEGIN_RETRIEVE_CALDAV_EVENTS),
+//     switchMap(action =>
+//       from(getDb()).pipe(
+//         switchMap(db =>
+//           from(db.events.find().exec()).pipe(
+//             map(events =>
+//               events.map(singleEvent => ({
+//                 id: singleEvent.id,
+//                 end: singleEvent.end,
+//                 start: singleEvent.start,
+//                 summary: singleEvent.summary,
+//                 organizer: singleEvent.organizer,
+//                 recurrence: singleEvent.recurrence,
+//                 iCalUID: singleEvent.iCalUID,
+//                 attendees: singleEvent.attendee,
+//                 originalId: singleEvent.originalId,
+//                 creator: singleEvent.creator,
+//                 isRecurring: singleEvent.isRecurring,
+//                 isModifiedThenDeleted: singleEvent.isModifiedThenDeleted
+//               }))
+//             ),
+//             // map(events => updateStoredEvents(events))
+//             switchMap(results =>
+//               from(PARSER.expandRecurEvents(results)).pipe(
+//                 switchMap(eventObjects => {
+//                   debugger;
+//                   return merge(eventObjects).pipe(
+//                     switchMap(mergedEventPromises => {
+//                       debugger;
+//                       return from(mergedEventPromises).pipe(
+//                         map(events => {
+//                           debugger;
+//                           return updateStoredEvents(events);
+//                         })
+//                       );
+//                     })
+//                   );
+//                 })
+//               )
+//             )
+//           )
+//         )
+//       )
+//     )
+//   );
+
 export const retrieveCaldavEventsEpic = action$ =>
   action$.pipe(
     ofType(BEGIN_RETRIEVE_CALDAV_EVENTS),
-    switchMap(action =>
-      from(getDb()).pipe(
-        switchMap(db =>
-          from(db.events.find().exec()).pipe(
-            // map(events =>
-            //   events.filter(
-            //     singleEvent => singleEvent.providerType === action.payload
-            //   )
-            // ),
-            map(events =>
-              events.map(singleEvent => ({
-                id: singleEvent.id,
-                end: singleEvent.end,
-                start: singleEvent.start,
-                summary: singleEvent.summary,
-                organizer: singleEvent.organizer,
-                recurrence: singleEvent.recurrence,
-                iCalUID: singleEvent.iCalUID,
-                attendees: singleEvent.attendee,
-                originalId: singleEvent.originalId,
-                creator: singleEvent.creator,
-                isRecurring: singleEvent.isRecurring,
-                isModifiedThenDeleted: singleEvent.isModifiedThenDeleted
-              }))
-            ),
-            // map(events => updateStoredEvents(events))
-            switchMap(results =>
-              from(PARSER.expandRecurEvents(results)).pipe(
-                switchMap(eventPromises =>
-                  merge(eventPromises).pipe(
-                    switchMap(mergedEventPromises =>
-                      from(mergedEventPromises).pipe(
-                        map(events => updateStoredEvents(events))
-                      )
-                    )
-                  )
-                )
-              )
-            )
+    switchMap(() =>
+      from(retrieveEvents()).pipe(
+        switchMap(nonRecurEvents =>
+          from(retrieveRecurEvents(nonRecurEvents)).pipe(
+            map(allEvents => updateStoredEvents(allEvents))
           )
         )
       )
     )
   );
+
+const retrieveRecurEvents = async events => {
+  const recurEvents = await PARSER.expandRecurEvents(events);
+  return Promise.all(recurEvents);
+};
+
+const retrieveEvents = async () => {
+  const db = await getDb();
+  const events = await db.events.find().exec();
+  return events.map(event => ({
+    id: event.id,
+    end: event.end,
+    start: event.start,
+    summary: event.summary,
+    organizer: event.organizer,
+    recurrence: event.recurrence,
+    iCalUID: event.iCalUID,
+    attendees: event.attendee,
+    originalId: event.originalId,
+    creator: event.creator,
+    isRecurring: event.isRecurring,
+    isModifiedThenDeleted: event.isModifiedThenDeleted
+  }));
+};
 
 export const storeAccountEpics = action$ =>
   action$.pipe(

@@ -273,21 +273,26 @@ const expandRecurEvents = async results => {
     nonMTDresult => nonMTDresult.isRecurring
   );
   let merged = nonMTDresults;
-  const finalResults = recurringEvents.map(async recurMasterEvent => {
-    const recurPatternRecurId = await db.recurrencepatterns
-      .find()
-      .where('originalId')
-      .eq(recurMasterEvent.originalId)
-      .exec();
-    const recurTemp = parseRecurrence(
-      recurPatternRecurId[0].toJSON(),
-      recurMasterEvent
-    );
-    merged = [...merged, recurTemp];
-    const final = merged.reduce((acc, val) => acc.concat(val), []);
-    // debugger;
-    return final;
-  });
+  let finalResults = [];
+  if (recurringEvents.length === 0) {
+    finalResults = nonMTDresults;
+  } else {
+    finalResults = recurringEvents.map(async recurMasterEvent => {
+      const recurPatternRecurId = await db.recurrencepatterns
+        .find()
+        .where('originalId')
+        .eq(recurMasterEvent.originalId)
+        .exec();
+      const recurTemp = parseRecurrence(
+        recurPatternRecurId[0].toJSON(),
+        recurMasterEvent
+      );
+      merged = [...merged, recurTemp];
+      const final = merged.reduce((acc, val) => acc.concat(val), []);
+      // debugger;
+      return final;
+    });
+  }
   return finalResults;
 };
 
@@ -299,7 +304,7 @@ const parseRecurrence = (pattern, recurMasterEvent) => {
   const duration = getDuration(recurMasterEvent);
   recurDates.forEach(recurDateTime => {
     recurEvents.push({
-      id: recurMasterEvent.id,
+      id: uniqid(),
       end: {
         dateTime: moment(recurDateTime)
           .add(duration)

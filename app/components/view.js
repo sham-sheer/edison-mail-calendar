@@ -93,13 +93,13 @@ export default class View extends React.Component {
     //   })
     //   .then(console.log);
 
-    const exch = new ExchangeService();
-    exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
-
-    const userName = 'e0176993@u.nus.edu';
-    const password = 'Ggrfw4406@nus41';
-
-    exch.Credentials = new ExchangeCredentials(userName, password);
+    // const exch = new ExchangeService();
+    // exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
+    //
+    // const userName = 'e0176993@u.nus.edu';
+    // const password = 'Ggrfw4406@nus41';
+    //
+    // exch.Credentials = new ExchangeCredentials(userName, password);
 
     // try {
     //   var id = new FolderId(WellKnownFolderName.Calendar, new Mailbox(userName));
@@ -410,7 +410,7 @@ export default class View extends React.Component {
     const { props } = this;
     const { state } = this;
     // props.beginDeleteEvent(state.currentEvent.id);
-    props.beginDeleteCalendarObject(state.currentEvent.id);
+    props.beginDeleteCalendarObject(state.currentEvent.originalId);
     // props.beginDeleteCalendarObjec
     this.closeModal();
   };
