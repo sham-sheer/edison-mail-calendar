@@ -355,7 +355,11 @@ export default class View extends React.Component {
   editEvent = () => {
     const { props } = this;
     const { state } = this;
-    props.history.push(`/${state.currentEvent.id}`);
+    // props.history.push(`/${state.currentEvent.id}`);
+    const payload = {
+      id: state.currentEvent.originalId
+    };
+    props.beginUpdateCalendarObject(payload);
   };
 
   handleEventClick = event => {

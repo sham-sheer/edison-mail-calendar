@@ -48,8 +48,35 @@ export const updateCalendarObjectEpics = action$ =>
   action$.pipe(
     ofType(CalDavActionCreators.BEGIN_UPDATE_CALENDAR_OBJECT),
     switchMap(action =>
-      from(dav.updateCalendarObject(action.payload)).pipe(
-        map(resp => CalDavActionCreators.successUpdateCalendarObject(resp)),
+      from(updateEventInDb(action.payload)).pipe(
+        switchMap(updatedEvent => {
+          debugger;
+          const updatedEventJSON = updatedEvent.toJSON();
+          const calendarData = createCalData(updatedEvent.ICALString);
+          const { caldavUrl, etag } = updatedEventJSON;
+          const xhrObject = new dav.transport.Basic(
+            new dav.Credentials({
+              username: Credentials.ICLOUD_USERNAME,
+              password: Credentials.ICLOUD_PASSWORD
+            })
+          );
+          const option = {
+            xhr: xhrObject,
+            contentType: 'text/calendar; charset=utf-8'
+          };
+          const calendarObject = {
+            url: caldavUrl,
+            etag,
+            calendarData
+          };
+          debugger;
+          return from(dav.updateCalendarObject(calendarObject, option)).pipe(
+            map(res => CalDavActionCreators.successDeleteCalendarObject(res)),
+            catchError(error =>
+              of(CalDavActionCreators.failDeleteCalendarObject(error))
+            )
+          );
+        }),
         catchError(error =>
           of(CalDavActionCreators.failUpdateCalendarObject(error))
         )
@@ -108,7 +135,7 @@ export const failDeleteCalendarObjectEpics = action$ =>
 const removeEventFromDb = async eventId => {
   const db = await getDb();
   try {
-    const eventQuery = db.events
+    const eventQuery = await db.events
       .find()
       .where('originalId')
       .eq(eventId);
@@ -117,4 +144,30 @@ const removeEventFromDb = async eventId => {
   } catch (e) {
     return e;
   }
+};
+
+const updateEventInDb = async payload => {
+  const db = await getDb();
+  try {
+    const eventQuery = await db.events
+      .find()
+      .where('originalId')
+      .eq(payload.id)
+      .exec();
+    const eventJSON = eventQuery[0].toJSON();
+    eventJSON.summary = 'Whats next';
+    const updatedEvent = await db.events.upsert(eventJSON);
+    return updatedEvent;
+  } catch (e) {
+    return e;
+  }
+};
+
+const createCalData = ICALString => {
+  const jcalData = ICAL.parse(ICALString);
+  const comp = new ICAL.Component(jcalData);
+  const vevent = comp.getFirstSubcomponent('vevent');
+  vevent.updatePropertyWithValue('summary', 'Whats next');
+  const ICALEventString = comp.toString();
+  return ICALEventString;
 };

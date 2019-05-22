@@ -22,7 +22,8 @@ import {
 import {
   beginRetrieveCaldavEvents,
   resetCaldavAccount,
-  beginDeleteCalendarObject
+  beginDeleteCalendarObject,
+  beginUpdateCalendarObject
 } from '../actions/caldav';
 import getFilteredEvents from '../selectors/ui-selector';
 
@@ -61,7 +62,8 @@ const mapDispatchToProps = dispatch => ({
   beginRetrieveCalDavEvents: () => dispatch(beginRetrieveCaldavEvents()),
   resetCaldavAccount: () => dispatch(resetCaldavAccount()),
   beginDeleteCalendarObject: payload =>
-    dispatch(beginDeleteCalendarObject(payload))
+    dispatch(beginDeleteCalendarObject(payload)),
+  beginUpdateCalendarObject: event => dispatch(beginUpdateCalendarObject(event))
 });
 
 export default connect(

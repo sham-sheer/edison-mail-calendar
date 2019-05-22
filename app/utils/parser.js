@@ -84,6 +84,7 @@ const parseEvents = (events, calendarId, creator) => {
       let mtd = false;
       if (jcalData.length > 0) {
         const comp = new ICAL.Component(jcalData);
+        const compString = comp.toString();
         const vevents = comp.getAllSubcomponents('vevent');
         const modifiedOccurences = [];
         const recurrenceIds = [];
@@ -142,7 +143,8 @@ const parseEvents = (events, calendarId, creator) => {
             creator,
             mtd,
             etag,
-            url
+            url,
+            compString
           );
           parsedEvents.push({
             ics,
@@ -164,7 +166,8 @@ const parseEvents = (events, calendarId, creator) => {
               creator,
               mtd,
               etag,
-              url
+              url,
+              compString
             );
             parsedEvents.push({
               ics,
@@ -206,7 +209,8 @@ const parseICALEvent = (
   creator,
   mtd,
   etag,
-  url
+  url,
+  compString
 ) => {
   const dtstart = vevent.getFirstPropertyValue('dtstart');
   const dtend = vevent.getFirstPropertyValue('dtend');
@@ -250,7 +254,8 @@ const parseICALEvent = (
     isRecurring,
     isModifiedThenDeleted: mtd,
     etag,
-    caldavUrl: url
+    caldavUrl: url,
+    ICALString: compString
   };
 };
 

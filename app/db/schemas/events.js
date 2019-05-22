@@ -178,6 +178,9 @@ export default {
     },
     etag: {
       type: 'string'
+    },
+    ICALString: {
+      type: 'string'
     }
   },
   required: ['end', 'start']
