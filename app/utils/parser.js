@@ -88,15 +88,6 @@ const parseEvents = (events, calendarId, creator) => {
         const vevents = comp.getAllSubcomponents('vevent');
         const modifiedOccurences = [];
         const recurrenceIds = [];
-        // vevents.forEach((evt, index) => {
-        //   // Contains all modified occurences
-        //   if (evt.getFirstPropertyValue('recurrence-id')) {
-        //     modifiedOccurences.push({
-        //       'recurrence-id': evt.getFirstPropertyValue('recurrence-id'),
-        //       key: index
-        //     });
-        //   }
-        // });
         vevents.forEach((evt, index) => {
           // Contains all modified occurences
           if (evt.getFirstPropertyValue('recurrence-id')) {
@@ -120,15 +111,6 @@ const parseEvents = (events, calendarId, creator) => {
         }
 
         if (ICALEvent.isRecurring()) {
-          // const recurringEvents = expandRecurringEvent(
-          //   vevents,
-          //   vevent,
-          //   ICALEvent,
-          //   modifiedOccurences,
-          //   ics,
-          //   attendees,
-          //   etag
-          // );
           const rrule = vevent.getFirstPropertyValue('rrule');
           recurringInterval = rrule.interval;
           rruleJSON = rrule.toJSON();
@@ -226,6 +208,7 @@ const parseICALEvent = (
       timezone: 'timezone'
     },
     originalId: vevent.getFirstPropertyValue('uid'),
+    iCalUID: vevent.getFirstPropertyValue('uid'),
     created: new Date(vevent.getFirstPropertyValue('created')).toISOString(),
     updated: new Date(
       vevent.getFirstPropertyValue('last-modified')

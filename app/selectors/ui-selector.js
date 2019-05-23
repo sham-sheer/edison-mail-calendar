@@ -15,7 +15,7 @@ const getFilteredEvents = createSelector(
       title: eachEvent.summary,
       end: new Date(moment(eachEvent.end.dateTime).format()),
       start: new Date(moment(eachEvent.start.dateTime).format()),
-      originalId: eachEvent.originalId
+      iCalUID: eachEvent.iCalUID
     }));
     return formatedEvents;
   }

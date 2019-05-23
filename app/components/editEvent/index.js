@@ -83,6 +83,7 @@ export default class EditEvent extends React.Component {
     const { target } = event;
     const { value } = target;
     const { name } = target;
+    debugger;
     this.setState({
       [name]: value
     });
@@ -214,13 +215,14 @@ export default class EditEvent extends React.Component {
   //     Have to think how to call the function when I might not have the object. This means that perhaps I should store the object in the main object.
   //     In order to retrive the event, I need to make a query from the script to get the javascript ews object. However, once I have it, I can update it easily.
   // */
-  retrieveEvent = async id => {
+  retrieveEvent = async originalId => {
     const db = await getDb();
     const dbEvent = await db.events
       .find()
-      .where('id')
-      .eq(id)
+      .where('originalId')
+      .eq(originalId)
       .exec();
+    debugger;
     const dbEventJSON = dbEvent[0].toJSON();
     console.log(dbEventJSON);
 

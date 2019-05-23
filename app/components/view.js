@@ -355,11 +355,12 @@ export default class View extends React.Component {
   editEvent = () => {
     const { props } = this;
     const { state } = this;
-    // props.history.push(`/${state.currentEvent.id}`);
-    const payload = {
-      id: state.currentEvent.originalId
-    };
-    props.beginUpdateCalendarObject(payload);
+    debugger;
+    props.history.push(`/${state.currentEvent.originalId}`);
+    // const payload = {
+    //   id: state.currentEvent.originalId
+    // };
+    // props.beginUpdateCalendarObject(payload);
   };
 
   handleEventClick = event => {
@@ -414,7 +415,8 @@ export default class View extends React.Component {
     const { props } = this;
     const { state } = this;
     // props.beginDeleteEvent(state.currentEvent.id);
-    props.beginDeleteCalendarObject(state.currentEvent.originalId);
+    debugger;
+    props.beginDeleteCalendarObject(state.currentEvent.iCalUID);
     // props.beginDeleteCalendarObjec
     this.closeModal();
   };

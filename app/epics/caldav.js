@@ -137,7 +137,7 @@ const removeEventFromDb = async eventId => {
   try {
     const eventQuery = await db.events
       .find()
-      .where('originalId')
+      .where('iCalUID')
       .eq(eventId);
     const removedEvent = await eventQuery.remove();
     return removedEvent;
