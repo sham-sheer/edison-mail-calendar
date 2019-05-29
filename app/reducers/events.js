@@ -5,9 +5,12 @@ import {
   DUPLICATE_ACTION,
   SYNC_STORED_EVENTS
 } from '../actions/db/events';
+import { BEGIN_DELETE_CALENDAR_OBJECT, FAIL_DELETE_CALENDAR_OBJECT } from '../actions/caldav';
 
 const initialState = {
-  calEvents: []
+  calEvents: [],
+  deletedEventId: '',
+  deleteError: ''
 };
 
 const mergeEvents = (oldEvents, newItems) => {
@@ -43,6 +46,16 @@ const syncEvents = (oldEvents, newEvents) => {
   return newPayload;
 };
 
+const hideEvent = (calEvents, deletedEventId) => {
+  const newEvents = [];
+  calEvents.forEach((calEvent) => {
+    if (calEvent.id !== deletedEventId) {
+      newEvents.push(calEvent);
+    }
+  });
+  return newEvents;
+};
+
 export default function eventsReducer(state = initialState, action) {
   if (action === undefined) {
     return state;
@@ -62,6 +75,14 @@ export default function eventsReducer(state = initialState, action) {
     }
     case DUPLICATE_ACTION:
       return state;
+    case BEGIN_DELETE_CALENDAR_OBJECT: {
+      return Object.assign({}, state, { deletedEventId: action.payload });
+    }
+    case FAIL_DELETE_CALENDAR_OBJECT:
+      return Object.assign({}, state, {
+        deletedEventId: '',
+        deleteError: action.payload
+      });
     default:
       return state;
   }

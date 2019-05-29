@@ -79,18 +79,10 @@ const parseEvents = (events, calendarId, creator) => {
       let mtd = false;
       if (jcalData.length > 0) {
         const comp = new ICAL.Component(jcalData);
+        const compString = comp.toString();
         const vevents = comp.getAllSubcomponents('vevent');
         const modifiedOccurences = [];
         const recurrenceIds = [];
-        // vevents.forEach((evt, index) => {
-        //   // Contains all modified occurences
-        //   if (evt.getFirstPropertyValue('recurrence-id')) {
-        //     modifiedOccurences.push({
-        //       'recurrence-id': evt.getFirstPropertyValue('recurrence-id'),
-        //       key: index
-        //     });
-        //   }
-        // });
         vevents.forEach((evt, index) => {
           // Contains all modified occurences
           if (evt.getFirstPropertyValue('recurrence-id')) {
@@ -114,15 +106,6 @@ const parseEvents = (events, calendarId, creator) => {
         }
 
         if (ICALEvent.isRecurring()) {
-          // const recurringEvents = expandRecurringEvent(
-          //   vevents,
-          //   vevent,
-          //   ICALEvent,
-          //   modifiedOccurences,
-          //   ics,
-          //   attendees,
-          //   etag
-          // );
           const rrule = vevent.getFirstPropertyValue('rrule');
           recurringInterval = rrule.interval;
           rruleJSON = rrule.toJSON();
@@ -137,7 +120,8 @@ const parseEvents = (events, calendarId, creator) => {
             creator,
             mtd,
             etag,
-            url
+            url,
+            compString
           );
           parsedEvents.push({
             ics,
@@ -159,7 +143,8 @@ const parseEvents = (events, calendarId, creator) => {
               creator,
               mtd,
               etag,
-              url
+              url,
+              compString
             );
             parsedEvents.push({
               ics,
@@ -193,7 +178,17 @@ const isModifiedThenDeleted = (recurEvent, exDates) => {
   return isMtd;
 };
 
-const parseICALEvent = (vevent, attendee, isRecurring, calendarId, creator, mtd, etag, url) => {
+const parseICALEvent = (
+  vevent,
+  attendee,
+  isRecurring,
+  calendarId,
+  creator,
+  mtd,
+  etag,
+  url,
+  compString
+) => {
   const dtstart = vevent.getFirstPropertyValue('dtstart');
   const dtend = vevent.getFirstPropertyValue('dtend');
 
@@ -235,7 +230,8 @@ const parseICALEvent = (vevent, attendee, isRecurring, calendarId, creator, mtd,
     isRecurring,
     isModifiedThenDeleted: mtd,
     etag,
-    caldavUrl: url
+    caldavUrl: url,
+    ICALString: compString
   };
 };
 
@@ -253,20 +249,23 @@ const expandRecurEvents = async (results) => {
   const nonMTDresults = results.filter((result) => !result.isModifiedThenDeleted);
   const recurringEvents = nonMTDresults.filter((nonMTDresult) => nonMTDresult.isRecurring);
   let merged = nonMTDresults;
-  const finalResults = recurringEvents.map(async (recurMasterEvent) => {
-    console.log(recurMasterEvent.originalId);
-    const recurPatternRecurId = await db.recurrencepatterns
-      .find()
-      .where('originalId')
-      .eq(recurMasterEvent.iCalUID)
-      .exec();
-    console.log(recurPatternRecurId[0].toJSON(), recurMasterEvent);
-    const recurTemp = await parseRecurrence(recurPatternRecurId[0].toJSON(), recurMasterEvent);
-    merged = [...merged, recurTemp];
-    const final = merged.reduce((acc, val) => acc.concat(val), []);
-    // debugger;
-    return final;
-  });
+  let finalResults = [];
+  if (recurringEvents.length === 0) {
+    finalResults = nonMTDresults;
+  } else {
+    finalResults = recurringEvents.map(async (recurMasterEvent) => {
+      const recurPatternRecurId = await db.recurrencepatterns
+        .find()
+        .where('originalId')
+        .eq(recurMasterEvent.originalId)
+        .exec();
+      const recurTemp = parseRecurrence(recurPatternRecurId[0].toJSON(), recurMasterEvent);
+      merged = [...merged, recurTemp];
+      const final = merged.reduce((acc, val) => acc.concat(val), []);
+      // debugger;
+      return final;
+    });
+  }
   return finalResults;
 };
 
@@ -279,7 +278,7 @@ const parseRecurrence = async (pattern, recurMasterEvent) => {
 
   recurDates.forEach((recurDateTime) => {
     recurEvents.push({
-      id: recurMasterEvent.id,
+      id: uniqid(),
       end: {
         dateTime: moment(recurDateTime)
           .add(duration)

@@ -31,14 +31,38 @@ const configureStore = (initialState?: counterStateType) => {
   const router = routerMiddleware(history);
   middleware.push(router);
 
-  // eslint-disable-next-line no-underscore-dangle
+  // // Redux DevTools Configuration
+  // const actionCreators = {
+  //   ...counterActions,
+  //   ...routerActions
+  // };
+  // If Redux DevTools Extension is installed use it, otherwise use Redux compose
+  /* eslint-disable no-underscore-dangle */
   const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+  /* eslint-enable no-underscore-dangle */
+
+  // Apply Middleware & Compose Enhancers
+  enhancers.push(
+    applyMiddleware(
+      ...middleware,
+      // authBeginMiddleware,
+      // authSuccessMiddleware,
+      epicMiddleware,
+      loggerMiddleware
+    )
+  );
+  const enhancer = composeEnhancers(...enhancers);
 
   // Create Store
   const store = createStore(
     rootReducer,
     composeEnhancers(
-      applyMiddleware(authBeginMiddleware, authSuccessMiddleware, epicMiddleware, loggerMiddleware)
+      applyMiddleware(
+        // authBeginMiddleware,
+        // authSuccessMiddleware,
+        epicMiddleware,
+        loggerMiddleware
+      )
     )
   );
 

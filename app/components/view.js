@@ -181,7 +181,12 @@ export default class View extends React.Component {
   editEvent = () => {
     const { props } = this;
     const { state } = this;
-    props.history.push(`/${state.currentEvent.id}`);
+    debugger;
+    props.history.push(`/${state.currentEvent.originalId}`);
+    // const payload = {
+    //   id: state.currentEvent.originalId
+    // };
+    // props.beginUpdateCalendarObject(payload);
   };
 
   handleEventClick = (event) => {
@@ -229,19 +234,29 @@ export default class View extends React.Component {
   deleteEvent = () => {
     const { props } = this;
     const { state } = this;
-    props.beginDeleteEvent(state.currentEvent.id);
-    // props.beginDeleteCalendarObject(state.currentEvent);
+    // props.beginDeleteEvent(state.currentEvent.id);
+    debugger;
+    props.beginDeleteCalendarObject(state.currentEvent.iCalUID);
+    // props.beginDeleteCalendarObjec
     this.closeModal();
+  };
+
+  getVisibleEvents = () => {
+    const { props } = this;
+    const { events } = props;
+    const { deletedEventId } = props;
+    const visibleEvents = [];
+    return events.filter((event) => event.id !== deletedEventId);
   };
 
   /* Render functions */
   renderCalendar = (props) => {
-    const { events } = props;
+    const visibleEvents = this.getVisibleEvents();
     return (
       <DragAndDropCalendar
         selectable
         localizer={localizer}
-        events={events}
+        events={visibleEvents}
         views={{
           month: true,
           day: true

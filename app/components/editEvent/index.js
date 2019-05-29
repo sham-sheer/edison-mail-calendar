@@ -59,7 +59,7 @@ export default class EditEvent extends React.Component {
   }
 
   // find a way to handle all different inputs
-  handleChange = event => {
+  handleChange = (event) => {
     if (event.target !== undefined) {
       this.setState({
         [event.target.name]: event.target.value
@@ -81,26 +81,27 @@ export default class EditEvent extends React.Component {
     }
   };
 
-  handleInputChange = event => {
+  handleInputChange = (event) => {
     const { target } = event;
     const { value } = target;
     const { name } = target;
+    debugger;
     this.setState({
       [name]: value
     });
   };
 
-  handleReactSelect = event => {
+  handleReactSelect = (event) => {
     this.setState({
       [event.name]: event.value
     });
   };
 
-  handleCheckboxChange = event => {
+  handleCheckboxChange = (event) => {
     this.setState({ allDay: event.target.checked });
   };
 
-  handleSubmit = async e => {
+  handleSubmit = async (e) => {
     e.preventDefault();
     console.log(this.props, this.state);
 
@@ -115,7 +116,7 @@ export default class EditEvent extends React.Component {
 
         console.log(startDateTime, endDateTime);
 
-        const attendeeForAPI = state.attendees.map(attendee => ({
+        const attendeeForAPI = state.attendees.map((attendee) => ({
           email: attendee.value
         }));
         const eventPatch = {
@@ -137,7 +138,7 @@ export default class EditEvent extends React.Component {
         const editResp = await editGoogleEvent(state.id, eventPatch);
         return editResp;
       case EXCHANGE:
-        const user = props.providers.EXCHANGE.filter(object => object.email === state.owner)[0]; // this validates which user the event belongs to, by email.
+        const user = props.providers.EXCHANGE.filter((object) => object.email === state.owner)[0]; // this validates which user the event belongs to, by email.
 
         try {
           const singleAppointment = await asyncGetSingleExchangeEvent(
@@ -203,13 +204,14 @@ export default class EditEvent extends React.Component {
   //     Have to think how to call the function when I might not have the object. This means that perhaps I should store the object in the main object.
   //     In order to retrive the event, I need to make a query from the script to get the javascript ews object. However, once I have it, I can update it easily.
   // */
-  retrieveEvent = async id => {
+  retrieveEvent = async (originalId) => {
     const db = await getDb();
     const dbEvent = await db.events
       .find()
-      .where('id')
-      .eq(id)
+      .where('originalId')
+      .eq(originalId)
       .exec();
+    debugger;
     const dbEventJSON = dbEvent[0].toJSON();
     console.log(dbEventJSON);
 
