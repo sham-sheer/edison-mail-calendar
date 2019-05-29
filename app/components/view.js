@@ -5,44 +5,29 @@ import moment from 'moment';
 import Modal from 'react-modal';
 import './view.css';
 import {
-  // ExchangeVersion,
   ExchangeService,
-  // DateTime,
-  // WebCredentials,
   Uri,
-  // WellKnownFolderName,
-  // CalendarView,
-  // SearchFilter,
-  // FolderSchema,
-  // FolderView,
   ExchangeCredentials,
-  // WindowsLiveCredentials,
-  // ClientCertificateCredentials,
-  // PartnerTokenCredentials,
-  // WSSecurityBasedCredentials,
-  // X509CertificateCredentials,
-  // TokenCredentials,
-  // OAuthCredentials,
-  // CalendarFolder,
-  // Appointment,
-  // SendInvitationsMode,
-  // ConflictResolutionMode,
-  // SendInvitationsOrCancellationsMode,
-  // ItemId,
-  // FolderId,
-  // Folder,
-  // Mailbox,
-  // ItemView
   Item,
   PropertySet,
   ItemSchema,
   ItemId,
-  DateTime
+  DateTime,
+  WellKnownFolderName,
+  FolderView,
+  ItemView,
+  CalendarView,
+  AppointmentSchema,
+  BasePropertySet,
+  BodyType
 } from 'ews-javascript-api';
 
+import RRule from 'rrule';
+import uniqid from 'uniqid';
 import getDb from '../db';
 import * as ProviderTypes from '../utils/constants';
 import SignupSyncLink from './SignupSyncLink';
+import { asyncGetRecurrAndSingleExchangeEvents } from '../utils/client/exchange';
 
 // import { FASTMAIL_USERNAME, FASTMAIL_PASSWORD } from '../utils/Credentials';
 // const dav = require('dav');
@@ -84,168 +69,30 @@ export default class View extends React.Component {
   }
 
   async componentDidMount() {
-    const exch = new ExchangeService();
-    exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
-
     const userName = 'e0176993@u.nus.edu';
     const password = 'Ggrfw4406@nus41';
 
+    const exch = new ExchangeService();
+    exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
     exch.Credentials = new ExchangeCredentials(userName, password);
 
     const { props } = this;
 
     props.beginPendingActions(props.providers);
 
-    // try {
-    //   var id = new FolderId(WellKnownFolderName.Calendar, new Mailbox(userName));
-    //   let targetFolder = Folder.Bind(exch, id).then(
-    //     resp => console.log(resp),
-    //     error => console.log("Inside error:", error)
-    //   );
-    // } catch (e){
-    //   console.log("Error: ",e);
-    // }
-
-    // // -------------------------------- This code test the finding of multiple calendars --------------------------------
-    // try {
-    //   exch.FindFolders(WellKnownFolderName.Calendar, new FolderView(100)).then(
-    //     // resp => resp.folders.map(folder => console.log(folder)),
-    //     resp => resp.folders.map(folder => {
-    //       folder.FindItems(new ItemView(folder.TotalCount > 0 ? folder.TotalCount : 1)).then(
-    //         resp => {
-    //           console.log(folder.Id.UniqueId, folder.DisplayName, resp.items, resp.totalCount);
-
-    //           // Here, we need to do some processing so that it can update on success, but not an issue really.
-    //           // I can parse the information into the calendar, but like, how to differciate it is a different question.
-    //         },
-    //         err => console.log(err)
-    //       )
-    //     }),
-    //     err => console.log(err)
-    //   )
-
-    // } catch (e) {
-    //   console.log("e: ", e);
-    // }
-    // // -------------------------------- This code test the finding of multiple calendars --------------------------------
-
-    /*
-      TESTING OF LOGGING IN WITH ALL SERVICES.
-      // let exch = new ExchangeService();
-      // exch.Url = new Uri("https://outlook.office365.com/Ews/Exchange.asmx");
-
-      // // let userName = "shuhao";
-      // // let password = "Edo13579";aa
-
-      // let userName = "e0176993@u.nus.edu";
-      // let password = "Ggrfw4406@nus41";
-
-      // // exch.Credentials = new ClientCertificateCredentials(userName, password);
-      // // var view = new CalendarView(DateTime.Now.Add(-23, "month"), DateTime.Now);
-      // // exch.FindAppointments(WellKnownFolderName.Calendar, view).then((response) => {
-      // //   console.log(response.Items);
-      // // }, function (error) {
-      // //   console.log(error);
-      // // });
-
-      // exch.Credentials = new ExchangeCredentials(userName, password);
-      // var a = moment.unix(0).add(23, "month");
-      // var prev = moment.unix(0);;
-      // var b = moment.unix(1893459600);      // 1/1/2099 1am , just some random super large time.
-
-      // var view;
-      // var exchangeEvents = [];
-
-      // function loopEvents (response) {
-      //   exchangeEvents = exchangeEvents.concat(response.Items);
-      // }
-
-      // console.log("Started exchange sync");
-      // // If you want an exclusive end date (half-open interval)
-      // for (var m = moment(a); m.isBefore(b); m.add(23, "month")) {
-      //   view = new CalendarView(new DateTime(prev), new DateTime(m));
-      //   await exch.FindAppointments(WellKnownFolderName.Calendar, view).then((response) => loopEvents(response), function (error) {
-      //     console.log(error);
-      //   });
-      //   prev = prev.add(23, "month")
-      // }
-      // console.log("Finished exchange sync");
-      // console.log(exchangeEvents);
-
-      // exch.Credentials = new PartnerTokenCredentials(userName, password);
-      // view = new CalendarView(DateTime.Now.Add(-23, "month"), DateTime.Now);
-      // exch.FindAppointments(WellKnownFolderName.Calendar, view).then((response) => {
-      //   console.log(response.Items);
-      // }, function (error) {
-      //   console.log(error);
-      // });
-
-      // exch.Credentials = new TokenCredentials(userName, password);
-      // view = new CalendarView(DateTime.Now.Add(-23, "month"), DateTime.Now);
-      // exch.FindAppointments(WellKnownFolderName.Calendar, view).then((response) => {
-      //   console.log(response.Items);
-      // }, function (error) {
-      //   console.log(error);
-      // });
-
-      // exch.Credentials = new WSSecurityBasedCredentials(userName, password);
-      // view = new CalendarView(DateTime.Now.Add(-23, "month"), DateTime.Now);
-      // exch.FindAppointments(WellKnownFolderName.Calendar, view).then((response) => {
-      //   console.log(response.Items);
-      // }, function (error) {
-      //   console.log(error);
-      // });
-
-      // exch.Credentials = new WebCredentials(userName, password);
-      // view = new CalendarView(DateTime.Now.Add(-23, "month"), DateTime.Now);
-      // exch.FindAppointments(WellKnownFolderName.Calendar, view).then((response) => {
-      //   console.log(response.Items);
-      // }, function (error) {
-      //   console.log(error);
-      // });
-
-      // exch.Credentials = new WindowsLiveCredentials(userName, password);
-      // view = new CalendarView(DateTime.Now.Add(-23, "month"), DateTime.Now);
-      // exch.FindAppointments(WellKnownFolderName.Calendar, view).then((response) => {
-      //   console.log(response.Items);
-      // }, function (error) {
-      //   console.log(error);
-      // });
-
-
-      // exch.Credentials = new X509CertificateCredentials(userName, password);
-      // var view = new CalendarView(DateTime.Now.Add(-23, "month"), DateTime.Now);
-      // exch.FindAppointments(WellKnownFolderName.Calendar, view).then((response) => {
-      //   console.log(response.Items);
-      // }, function (error) {
-      //   console.log(error);
-      // });
-    */
-
     const db = await getDb();
-
-    // const eventsz = await db.events.find().exec();
-    // console.log(eventsz);
-    // const actions = await db.pendingactions.find().exec();
-    // console.log(actions);
-
     db.persons
       .find()
       .exec()
       .then((providerUserData) => {
         providerUserData.forEach((singleProviderUserData) => {
           if (singleProviderUserData.providerType === ProviderTypes.EXCHANGE) {
-            // Might wanna rethink this approach as it might be good for some clean up here.
             props.onStartGetExchangeAuth(
               this.filterUserOnStart(singleProviderUserData, ProviderTypes.EXCHANGE)
             );
           } else {
             const now = new Date().getTime();
             const isExpired = now > parseInt(singleProviderUserData.accessTokenExpiry, 10);
-
-            // console.log(singleProviderUserData,this.filterUserOnStart(singleProviderUserData,ProviderTypes.GOOGLE));
-            // console.log(now,singleProviderUserData.accessTokenExpiry,isExpired,providerUserData);
-            // console.log(singleProviderUserData.providerType + " is " + (isExpired ? "expired!" : "not expired!"));
 
             if (!isExpired) {
               switch (singleProviderUserData.providerType) {

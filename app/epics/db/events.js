@@ -105,6 +105,7 @@ const storeEvents = async (payload) => {
       false
     );
     filteredEvent.providerType = payload.providerType;
+    // console.log(dbEvent, filteredEvent);
     try {
       dbUpsertPromises.push(db.events.upsert(filteredEvent));
     } catch (e) {
@@ -190,7 +191,7 @@ const deleteEvent = async (id) => {
         );
 
         await asyncDeleteExchangeEvent(singleAppointment, user, () => {
-          // Lambda for expansion if needed.
+          // Lambda for future if needed.
         });
 
         await deleteDoc.remove();

@@ -1,12 +1,13 @@
 import moment from 'moment';
 import md5 from 'md5';
 import { ExtendedPropertyDefinition, StringHelper } from 'ews-javascript-api';
+import db from '../db';
 
 export const OUTLOOK = 'OUTLOOK';
 export const GOOGLE = 'GOOGLE';
 export const EXCHANGE = 'EXCHANGE';
 
-export const dropDownTime = currentTime => {
+export const dropDownTime = (currentTime) => {
   const timeOptions = [];
   let hour = 0;
   let initialTime = 0;
@@ -29,7 +30,7 @@ export const dropDownTime = currentTime => {
   return timeOptions;
 };
 
-const convertHour = i => {
+const convertHour = (i) => {
   if (i < 10) {
     return `0${i.toString()}:`;
   }
@@ -56,7 +57,7 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
         'reminders',
         'attachments',
         'hangoutLink'
-      ].forEach(e => delete dbEvent[e]);
+      ].forEach((e) => delete dbEvent[e]);
       dbEvent.originalId = dbEvent.id;
       dbEvent.id = md5(dbEvent.id);
       dbEvent.creator = dbEvent.creator.email;
@@ -67,21 +68,17 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
 
       return dbEvent;
     case OUTLOOK:
-      ['@odata.etag'].forEach(e => delete dbEvent[e]);
+      ['@odata.etag'].forEach((e) => delete dbEvent[e]);
 
       schemaCastedDbObject.id = md5(dbEvent.id);
       schemaCastedDbObject.originalId = dbEvent.id;
       schemaCastedDbObject.htmlLink = dbEvent.webLink;
-      schemaCastedDbObject.status = dbEvent.isCancelled
-        ? 'cancelled'
-        : 'confirmed';
+      schemaCastedDbObject.status = dbEvent.isCancelled ? 'cancelled' : 'confirmed';
       schemaCastedDbObject.created = dbEvent.createdDateTime;
       schemaCastedDbObject.updated = dbEvent.lastModifiedDateTime;
       schemaCastedDbObject.summary = dbEvent.subject;
       schemaCastedDbObject.description = dbEvent.bodyPreview; // Might need to use .body instead, but it returns html so idk how to deal w/ it now
-      schemaCastedDbObject.location = JSON.stringify(
-        dbEvent.location.coordinates
-      ); // We need to convert coordinates coz idk how else to represent it
+      schemaCastedDbObject.location = JSON.stringify(dbEvent.location.coordinates); // We need to convert coordinates coz idk how else to represent it
       schemaCastedDbObject.creator = dbEvent.organizer.emailAddress.address;
       schemaCastedDbObject.organizer = {
         email: dbEvent.organizer.emailAddress.address,
@@ -169,24 +166,27 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
 
         Talk to shuhao tmr, and ask how you think we should deal with this case.
       */
-      schemaCastedDbObject.id = md5(
-        dbEvent.Id === null ? id : dbEvent.Id.UniqueId
-      );
-      schemaCastedDbObject.originalId =
-        dbEvent.Id === null ? id : dbEvent.Id.UniqueId;
+      schemaCastedDbObject.id = md5(dbEvent.Id === null ? id : dbEvent.Id.UniqueId);
+      schemaCastedDbObject.originalId = dbEvent.Id === null ? id : dbEvent.Id.UniqueId;
       schemaCastedDbObject.start = {
         dateTime: dbEvent.Start.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ')
       };
       schemaCastedDbObject.end = {
         dateTime: dbEvent.End.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ')
       };
-      schemaCastedDbObject.owner =
-        dbEvent.owner === undefined ? owner : dbEvent.owner;
+      schemaCastedDbObject.owner = dbEvent.owner === undefined ? owner : dbEvent.owner;
       schemaCastedDbObject.providerType = EXCHANGE;
       schemaCastedDbObject.summary = dbEvent.Subject;
       schemaCastedDbObject.incomplete = false;
       schemaCastedDbObject.local = local;
       schemaCastedDbObject.hide = false;
+      schemaCastedDbObject.isRecurring = dbEvent.AppointmentType !== 'Single';
+      schemaCastedDbObject.attendee = [];
+      schemaCastedDbObject.iCalUID = dbEvent.ICalUid;
+      // if (schemaCastedDbObject.isRecurring) {
+      //   schemaCastedDbObject.recurringEventId = dbEvent.RecurrenceMasterId.UniqueId;
+      // }
+      // { iCalUID: { value: 'ICalUid', defaultValue: '', type: 'needed' } },
 
       [
         {
@@ -214,16 +214,14 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
             type: 'needed'
           }
         },
-        { iCalUID: { value: 'ICalUid', defaultValue: '', type: 'needed' } },
+        // { iCalUID: { value: 'ICalUid', defaultValue: '', type: 'needed' } },
         {
           created: {
             value: 'DateTimeCreated',
             defaultValue: '',
             type: 'neededFunc',
             func() {
-              return dbEvent.DateTimeCreated.getMomentDate().format(
-                'YYYY-MM-DDTHH:mm:ssZ'
-              );
+              return dbEvent.DateTimeCreated.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ');
             }
           }
         },
@@ -233,9 +231,8 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
             defaultValue: '',
             type: 'neededFunc',
             func() {
-              return dbEvent.LastModifiedTime.getMomentDate().format(
-                'YYYY-MM-DDTHH:mm:ssZ'
-              );
+              // debugger;
+              return dbEvent.LastModifiedTime.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ');
             }
           }
         },
@@ -245,8 +242,7 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
             defaultValue: 'confirmed',
             type: 'neededFunc',
             func() {
-              return dbEvent.IsCancelled === undefined ||
-                dbEvent.IsCancelled === null
+              return dbEvent.IsCancelled === undefined || dbEvent.IsCancelled === null
                 ? 'confirmed'
                 : 'cancelled';
             }
@@ -262,8 +258,8 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
             }
           }
         }
-      ].forEach(objMightHaveNothing => {
-        Object.keys(objMightHaveNothing).forEach(key => {
+      ].forEach((objMightHaveNothing) => {
+        Object.keys(objMightHaveNothing).forEach((key) => {
           // console.log(key + ", " + objMightHaveNothing[key]);
           if (objMightHaveNothing[key].type === 'optional') {
             exchangeTryCatchCanBeNull(
@@ -283,6 +279,15 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
               objMightHaveNothing[key].func
             );
           } else if (objMightHaveNothing[key].type === 'needed') {
+            // if (key === 'iCalUID') {
+            // console.log(
+            //   schemaCastedDbObject,
+            //   key,
+            //   dbEvent,
+            //   objMightHaveNothing[key].value,
+            //   objMightHaveNothing[key].defaultValue
+            // );
+            // }
             exchangeTryCatchCannotBeNull(
               schemaCastedDbObject,
               key,
@@ -291,6 +296,7 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
               objMightHaveNothing[key].defaultValue
             );
           } else if (objMightHaveNothing[key].type === 'neededFunc') {
+            // debugger;
             exchangeTryCatchCannotBeNullFunc(
               schemaCastedDbObject,
               key,
@@ -438,7 +444,7 @@ const exchangeTryCatchCannotBeNullFunc = (
   }
 };
 
-export const filterUsersIntoSchema = rxObj => ({
+export const filterUsersIntoSchema = (rxObj) => ({
   personId: rxObj.personId,
   originalId: rxObj.originalId,
   email: rxObj.email,
@@ -448,7 +454,7 @@ export const filterUsersIntoSchema = rxObj => ({
   password: rxObj.password
 });
 
-export const filterEventIntoSchema = rxObj => ({
+export const filterEventIntoSchema = (rxObj) => ({
   allDay: rxObj.allDay,
   id: rxObj.id,
   end: rxObj.end,

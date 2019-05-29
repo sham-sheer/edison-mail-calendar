@@ -7,9 +7,9 @@ import getDb from '../db';
 
 const TEMPORARY_RECURRENCE_END = new Date(2020, 12, 12);
 
-const parseRecurrenceEvents = calEvents => {
+const parseRecurrenceEvents = (calEvents) => {
   const recurringEvents = [];
-  calEvents.forEach(calEvent => {
+  calEvents.forEach((calEvent) => {
     const { isRecurring } = calEvent.data;
     if (isRecurring) {
       recurringEvents.push({
@@ -28,20 +28,19 @@ const parseRecurrenceEvents = calEvents => {
   return recurringEvents;
 };
 
-const parseEventPersons = events => {
+const parseEventPersons = (events) => {
   const eventPersons = [];
-  events.forEach(calEvent => {
+  events.forEach((calEvent) => {
     const attendees = calEvent.data.attendee;
     if (attendees.length > 0) {
       // if there are attendees
-      attendees.forEach(attendee => {
+      attendees.forEach((attendee) => {
         eventPersons.push({
           eventPersonId: uniqid(),
           // this is null when status of event is not confirmed
           eventId: calEvent.data.id,
           // Update: Gonna use email as the personId
-          personId:
-            attendee.email !== undefined ? attendee.email : attendee.action
+          personId: attendee.email !== undefined ? attendee.email : attendee.action
         });
       });
     }
@@ -49,8 +48,8 @@ const parseEventPersons = events => {
   return eventPersons;
 };
 
-const parseCal = calendars => {
-  const parsedCalendars = calendars.map(calendar => ({
+const parseCal = (calendars) => {
+  const parsedCalendars = calendars.map((calendar) => ({
     calendarId: calendar.data.href,
     ownerId: calendar.account.credentials.username,
     name: calendar.displayName,
@@ -60,15 +59,11 @@ const parseCal = calendars => {
   return parsedCalendars;
 };
 
-const parseCalEvents = calendars => {
+const parseCalEvents = (calendars) => {
   const events = [];
-  calendars.forEach(calendar => {
+  calendars.forEach((calendar) => {
     events.push(
-      parseEvents(
-        calendar.objects,
-        calendar.data.href,
-        calendar.account.credentials.username
-      )
+      parseEvents(calendar.objects, calendar.data.href, calendar.account.credentials.username)
     );
   });
   return events;
@@ -76,7 +71,7 @@ const parseCalEvents = calendars => {
 
 const parseEvents = (events, calendarId, creator) => {
   const parsedEvents = [];
-  events.forEach(calevent => {
+  events.forEach((calevent) => {
     if (calevent.calendarData !== undefined) {
       const jcalData = ICAL.parse(calevent.calendarData);
       const ics = calevent.data.href;
@@ -111,7 +106,7 @@ const parseEvents = (events, calendarId, creator) => {
 
         if (vevent.hasProperty('exdate')) {
           const exdateProps = vevent.getAllProperties('exdate');
-          exdateProps.forEach(exdate => exDates.push(exdate.jCal));
+          exdateProps.forEach((exdate) => exDates.push(exdate.jCal));
         }
 
         if (vevent.hasProperty('attendee')) {
@@ -154,7 +149,7 @@ const parseEvents = (events, calendarId, creator) => {
             data: eventParsed
           });
         } else {
-          vevents.forEach(recurvevent => {
+          vevents.forEach((recurvevent) => {
             mtd = isModifiedThenDeleted(recurvevent, exDates);
             const eventParsed = parseICALEvent(
               recurvevent,
@@ -189,7 +184,7 @@ const isModifiedThenDeleted = (recurEvent, exDates) => {
     return isMtd;
   }
   const recurId = recurEvent.getFirstProperty('recurrence-id').jCal[3];
-  exDates.forEach(exdate => {
+  exDates.forEach((exdate) => {
     if (exdate[3] === recurId) {
       isMtd = true;
       return isMtd;
@@ -198,16 +193,7 @@ const isModifiedThenDeleted = (recurEvent, exDates) => {
   return isMtd;
 };
 
-const parseICALEvent = (
-  vevent,
-  attendee,
-  isRecurring,
-  calendarId,
-  creator,
-  mtd,
-  etag,
-  url
-) => {
+const parseICALEvent = (vevent, attendee, isRecurring, calendarId, creator, mtd, etag, url) => {
   const dtstart = vevent.getFirstPropertyValue('dtstart');
   const dtend = vevent.getFirstPropertyValue('dtend');
 
@@ -222,10 +208,9 @@ const parseICALEvent = (
       timezone: 'timezone'
     },
     originalId: vevent.getFirstPropertyValue('uid'),
+    iCalUID: vevent.getFirstPropertyValue('uid'),
     created: new Date(vevent.getFirstPropertyValue('created')).toISOString(),
-    updated: new Date(
-      vevent.getFirstPropertyValue('last-modified')
-    ).toISOString(),
+    updated: new Date(vevent.getFirstPropertyValue('last-modified')).toISOString(),
     summary: vevent.getFirstPropertyValue('summary'),
     description:
       vevent.getFirstPropertyValue('description') == null
@@ -255,34 +240,28 @@ const parseICALEvent = (
 };
 
 /* Take Note that attendees with unconfirmed status do not have names */
-const parseAttendees = properties =>
-  properties.map(property => ({
+const parseAttendees = (properties) =>
+  properties.map((property) => ({
     status: property.jCal[1].partstat,
     action: property.jCal[3],
     email: property.jCal[1].email,
-    displayName:
-      property.jCal[1].cn !== undefined
-        ? property.jCal[1].cn
-        : property.jCal[1].email
+    displayName: property.jCal[1].cn !== undefined ? property.jCal[1].cn : property.jCal[1].email
   }));
 
-const expandRecurEvents = async results => {
+const expandRecurEvents = async (results) => {
   const db = await getDb();
-  const nonMTDresults = results.filter(result => !result.isModifiedThenDeleted);
-  const recurringEvents = nonMTDresults.filter(
-    nonMTDresult => nonMTDresult.isRecurring
-  );
+  const nonMTDresults = results.filter((result) => !result.isModifiedThenDeleted);
+  const recurringEvents = nonMTDresults.filter((nonMTDresult) => nonMTDresult.isRecurring);
   let merged = nonMTDresults;
-  const finalResults = recurringEvents.map(async recurMasterEvent => {
+  const finalResults = recurringEvents.map(async (recurMasterEvent) => {
+    console.log(recurMasterEvent.originalId);
     const recurPatternRecurId = await db.recurrencepatterns
       .find()
       .where('originalId')
-      .eq(recurMasterEvent.originalId)
+      .eq(recurMasterEvent.iCalUID)
       .exec();
-    const recurTemp = parseRecurrence(
-      recurPatternRecurId[0].toJSON(),
-      recurMasterEvent
-    );
+    console.log(recurPatternRecurId[0].toJSON(), recurMasterEvent);
+    const recurTemp = await parseRecurrence(recurPatternRecurId[0].toJSON(), recurMasterEvent);
     merged = [...merged, recurTemp];
     const final = merged.reduce((acc, val) => acc.concat(val), []);
     // debugger;
@@ -291,13 +270,14 @@ const expandRecurEvents = async results => {
   return finalResults;
 };
 
-const parseRecurrence = (pattern, recurMasterEvent) => {
+const parseRecurrence = async (pattern, recurMasterEvent) => {
   // debugger;
   const recurEvents = [];
   const ruleSet = buildRuleSet(pattern, recurMasterEvent);
-  const recurDates = ruleSet.all().map(date => date.toJSON());
+  const recurDates = ruleSet.all().map((date) => date.toJSON());
   const duration = getDuration(recurMasterEvent);
-  recurDates.forEach(recurDateTime => {
+
+  recurDates.forEach((recurDateTime) => {
     recurEvents.push({
       id: recurMasterEvent.id,
       end: {
@@ -320,6 +300,7 @@ const parseRecurrence = (pattern, recurMasterEvent) => {
       isRecurring: recurMasterEvent.isRecurring
     });
   });
+  console.log(recurEvents);
   return recurEvents;
 };
 
@@ -328,19 +309,16 @@ const buildRuleSet = (pattern, master) => {
   const ruleObject = buildRuleObject(pattern, master);
   rruleSet.rrule(new RRule(ruleObject));
   const { exDates } = pattern;
-  exDates.forEach(exdate => rruleSet.exdate(new Date(exdate[3])));
+  exDates.forEach((exdate) => rruleSet.exdate(new Date(exdate[3])));
   const { recurrenceIds } = pattern;
-  recurrenceIds.forEach(recurDate => rruleSet.exdate(new Date(recurDate[3])));
-  const modifiedThenDeletedDates = getModifiedThenDeletedDates(
-    exDates,
-    recurrenceIds
-  );
+  recurrenceIds.forEach((recurDate) => rruleSet.exdate(new Date(recurDate[3])));
+  const modifiedThenDeletedDates = getModifiedThenDeletedDates(exDates, recurrenceIds);
   /* To remove start date duplicate */
   rruleSet.exdate(new Date(master.start.dateTime));
   return rruleSet;
 };
 
-const getDuration = master => {
+const getDuration = (master) => {
   const start = moment(master.start.dateTime);
   const end = moment(master.end.dateTime);
   return moment.duration(end.diff(start));
@@ -365,16 +343,14 @@ const buildRuleObject = (pattern, master) => {
       break;
     default:
   }
-  ruleObject.until = pattern.until
-    ? new Date(pattern.until)
-    : TEMPORARY_RECURRENCE_END;
+  ruleObject.until = pattern.until ? new Date(pattern.until) : TEMPORARY_RECURRENCE_END;
   return ruleObject;
 };
 
 const getModifiedThenDeletedDates = (exDates, recurDates) => {
   const modifiedThenDeletedDates = [];
-  exDates.forEach(exdate => {
-    recurDates.forEach(recurDate => {
+  exDates.forEach((exdate) => {
+    recurDates.forEach((recurDate) => {
       if (exdate[3] === recurDate[3]) {
         modifiedThenDeletedDates.push(exdate);
       }

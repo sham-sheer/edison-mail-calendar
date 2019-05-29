@@ -52,7 +52,7 @@ import {
 import * as Providers from '../utils/constants';
 import { getUserEvents, getAccessToken, filterEventToOutlook } from '../utils/client/outlook';
 import {
-  asyncGetAllExchangeEvents,
+  asyncGetRecurrAndSingleExchangeEvents,
   asyncGetSingleExchangeEvent,
   asyncUpdateExchangeEvent,
   asyncDeleteExchangeEvent,
@@ -355,16 +355,17 @@ export const beginGetExchangeEventsEpics = (action$) =>
             reject(getEventsFailure('Exchange user undefined!!'));
           }
 
-          resolve(
-            asyncGetAllExchangeEvents(
-              action.payload.email,
-              action.payload.password,
-              'https://outlook.office365.com/Ews/Exchange.asmx'
-            )
-          );
+          const exch = new ExchangeService();
+          exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
+          exch.Credentials = new ExchangeCredentials(action.payload.email, action.payload.password);
+
+          resolve(asyncGetRecurrAndSingleExchangeEvents(exch));
         })
       ).pipe(
-        map((resp) => getEventsSuccess(resp, Providers.EXCHANGE, action.payload.email)),
+        map((resp) => {
+          console.log(resp);
+          return getEventsSuccess(resp, Providers.EXCHANGE, action.payload.email);
+        }),
         catchError((error) => of(error))
       )
     )
@@ -434,11 +435,11 @@ const syncEvents = async (action) => {
       // And we check if there is anything new.
       // If there is nothing new, we return nothing.
       try {
-        const appts = await asyncGetAllExchangeEvents(
-          user.email,
-          user.password,
-          'https://outlook.office365.com/Ews/Exchange.asmx'
-        );
+        const exch = new ExchangeService();
+        exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
+        exch.Credentials = new ExchangeCredentials(user.email, user.password);
+
+        const appts = await asyncGetRecurrAndSingleExchangeEvents(exch);
 
         // However, we need to get all items from database too, as created offline events
         // does not exist on the server yet.
@@ -447,12 +448,7 @@ const syncEvents = async (action) => {
         const updatedEvents = [];
         const listOfPriomises = [];
 
-        // console.log(appts);
         for (const appt of appts) {
-          if (appt.IsRecurring) {
-            continue;
-          }
-
           const dbObj = dbEvents.filter((dbEvent) => dbEvent.originalId === appt.Id.UniqueId);
           const filteredEvent = Providers.filterIntoSchema(
             appt,
@@ -590,6 +586,7 @@ const handlePendingActions = async (users, actions, db) => {
       }
 
       // Get a resulting action from the merge function.
+      console.log('HUH???!!!');
       const resultingAction = await handleMergeEvents(rxDbObj, serverObj, db, action.type, user);
 
       // Return object to be reduced down later on, with the proper user information.
