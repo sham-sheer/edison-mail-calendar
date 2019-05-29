@@ -57,12 +57,7 @@ const configureStore = (initialState?: counterStateType) => {
   const store = createStore(
     rootReducer,
     composeEnhancers(
-      applyMiddleware(
-        // authBeginMiddleware,
-        // authSuccessMiddleware,
-        epicMiddleware,
-        loggerMiddleware
-      )
+      applyMiddleware(authBeginMiddleware, authSuccessMiddleware, epicMiddleware, loggerMiddleware)
     )
   );
 

@@ -200,7 +200,6 @@ export const asyncGetRecurrAndSingleExchangeEvents = async (exch) => {
     exchangeEventsWithBody.push(...value);
   }
 
-  console.log(exchangeEventsWithBody);
   return exchangeEventsWithBody;
 };
 

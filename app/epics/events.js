@@ -377,6 +377,7 @@ export const clearAllEventsEpics = (action$) =>
   action$.pipe(
     ofType(CLEAR_ALL_EVENTS),
     map(() => {
+      console.log('here?');
       localStorage.clear();
       RxDB.removeDatabase('eventsdb', 'websql');
       return clearAllEventsSuccess();
