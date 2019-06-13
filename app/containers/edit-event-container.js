@@ -5,7 +5,8 @@ import { beginUpdateCalendarObject } from '../actions/caldav';
 import EditEvent from '../components/editEvent';
 
 const mapStateToProps = (state) => ({
-  providers: state.auth.providers
+  providers: state.auth.providers,
+  updateEventObject: state.events.updateEventObject
 });
 
 const mapDispatchToProps = (dispatch) => ({

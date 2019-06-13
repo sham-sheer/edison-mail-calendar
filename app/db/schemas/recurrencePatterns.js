@@ -43,6 +43,5 @@ export default {
     iCalUid: {
       type: 'string'
     }
-  },
-  required: ['recurringTypeId']
+  }
 };

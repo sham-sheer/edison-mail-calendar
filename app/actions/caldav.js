@@ -72,9 +72,13 @@ export const failUpdateCalendarObject = (error) => ({
   error
 });
 
-export const beginDeleteCalendarObject = (payload) => ({
+export const beginDeleteCalendarObject = (eventId, isSeries, isChild) => ({
   type: BEGIN_DELETE_CALENDAR_OBJECT,
-  payload
+  payload: {
+    eventId,
+    isSeries,
+    isChild
+  }
 });
 export const successDeleteCalendarObject = (payload) => ({
   type: SUCCESS_DELETE_CALENDAR_OBJECT,

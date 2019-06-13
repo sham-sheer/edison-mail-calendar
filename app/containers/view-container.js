@@ -23,7 +23,8 @@ import {
   beginPendingActions,
   endPendingActions,
   beginDeleteRecurrenceSeries,
-  beginDeleteFutureRecurrenceSeries
+  beginDeleteFutureRecurrenceSeries,
+  editEventsBeginCaldav
 } from '../actions/events';
 import {
   beginRetrieveCaldavEvents,
@@ -73,10 +74,17 @@ const mapDispatchToProps = (dispatch) => ({
   beginPendingActions: (providers) => dispatch(beginPendingActions(providers)),
   endPendingActions: () => dispatch(endPendingActions()),
 
+  // beginPollingEvents: () => dispatch(beginPollingEvents()),
+  // endPollingEvents: () => dispatch(endPollingEvents()),
+  //
+  // beginPendingActions: providers => dispatch(beginPendingActions(providers)),
+  // endPendingActions: () => dispatch(endPendingActions()),
+
   beginRetrieveCalDavEvents: () => dispatch(beginRetrieveCaldavEvents()),
   resetCaldavAccount: () => dispatch(resetCaldavAccount()),
-  beginDeleteCalendarObject: (payload) => dispatch(beginDeleteCalendarObject(payload)),
-  beginUpdateCalendarObject: (event) => dispatch(beginUpdateCalendarObject(event))
+  beginDeleteCalendarObject: (eventId) => dispatch(beginDeleteCalendarObject(eventId)),
+  beginUpdateCalendarObject: (event) => dispatch(beginUpdateCalendarObject(event)),
+  editEventsBeginCaldav: (currentEvent) => dispatch(editEventsBeginCaldav(currentEvent))
 });
 
 export default connect(

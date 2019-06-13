@@ -47,7 +47,8 @@ import {
   filterIntoSchema,
   OUTLOOK,
   EXCHANGE,
-  GOOGLE
+  GOOGLE,
+  CALDAV
 } from '../../utils/constants';
 
 import '../../bootstrap.css';
@@ -124,7 +125,6 @@ export default class EditEvent extends React.Component {
     const { target } = event;
     const { value } = target;
     const { name } = target;
-    debugger;
     this.setState({
       [name]: value
     });
@@ -529,6 +529,25 @@ export default class EditEvent extends React.Component {
             break;
         }
         break;
+      case CALDAV:
+        debugger;
+        const eventObject = {
+          id: props.updateEventObject.id,
+          summary: state.title,
+          description: props.updateEventObject.description,
+          start: moment(props.updateEventObject.start).format(),
+          end: moment(props.updateEventObject.end).format(),
+          iCalUID: props.updateEventObject.iCalUID,
+          location: ''
+        };
+        debugger;
+        props.beginUpdateCalendarObject({
+          eventObject,
+          iCalUID: state.iCalUID,
+          type: 'UPDATE_SINGLE_RECUR'
+        });
+        props.history.push(`/`);
+        break;
       default:
         break;
     }
@@ -607,7 +626,7 @@ export default class EditEvent extends React.Component {
     }
 
     this.setState({
-      id: dbEventJSON.originalId,
+      id: dbEventJSON.id,
       title: dbEventJSON.summary,
       description: dbEventJSON.description,
       start: dbEventJSON.start,
@@ -616,7 +635,8 @@ export default class EditEvent extends React.Component {
       hangoutLink: dbEventJSON.hangoutLink,
       providerType: dbEventJSON.providerType,
       owner: dbEventJSON.owner,
-      originalId: dbEventJSON.originalId
+      originalId: dbEventJSON.originalId,
+      iCalUID: dbEventJSON.iCalUID
     });
   };
 

@@ -7,6 +7,7 @@ import db from '../db';
 export const OUTLOOK = 'OUTLOOK';
 export const GOOGLE = 'GOOGLE';
 export const EXCHANGE = 'EXCHANGE';
+export const CALDAV = 'caldav';
 
 export const dropDownTime = (currentTime) => {
   const timeOptions = [];
