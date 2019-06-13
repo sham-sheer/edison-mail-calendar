@@ -8,6 +8,7 @@ const getEvents = (state) => state.events.calEvents;
 const getFilteredEvents = createSelector(
   [getEvents],
   (normalizedData) => {
+    debugger;
     const data = Object.values(normalizedData);
     const flatData = data.reduce((acc, val) => acc.concat(val), []);
     const formatedEvents = flatData.map((eachEvent) => ({

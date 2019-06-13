@@ -296,7 +296,9 @@ const expandRecurEvents = async (results) => {
         .eq(recurMasterEvent.originalId)
         .exec();
       const recurTemp = parseRecurrence(recurPatternRecurId[0].toJSON(), recurMasterEvent);
-      merged = [...merged, recurTemp];
+      console.log('here!!', recurTemp, merged);
+      merged = [...merged, ...recurTemp];
+      console.log(merged);
       const final = merged.reduce((acc, val) => acc.concat(val), []);
       // debugger;
       return final;
@@ -305,7 +307,7 @@ const expandRecurEvents = async (results) => {
   return finalResults;
 };
 
-const parseRecurrence = async (pattern, recurMasterEvent) => {
+const parseRecurrence = (pattern, recurMasterEvent) => {
   // debugger;
   const recurEvents = [];
   const ruleSet = buildRuleSet(pattern, recurMasterEvent);

@@ -27,6 +27,7 @@ export const retrieveCaldavEventsEpic = (action$) =>
   );
 
 const retrieveRecurEvents = async (events) => {
+  console.log(events);
   const recurEvents = await PARSER.expandRecurEvents(events);
   return Promise.all(recurEvents);
 };
@@ -86,7 +87,10 @@ const storeCaldav = async (payload) => {
     recurrenceEvents.forEach((recurrenceEvent) => {
       promises.push(db.recurrencepatterns.upsert(recurrenceEvent));
     });
-    return await Promise.all(promises);
+    console.log(promises);
+    const valueArr = await Promise.all(promises);
+    debugger;
+    return valueArr;
   } catch (e) {
     throw e;
   }
