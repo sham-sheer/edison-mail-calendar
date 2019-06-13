@@ -27,7 +27,6 @@ export const retrieveCaldavEventsEpic = (action$) =>
   );
 
 const retrieveRecurEvents = async (events) => {
-  console.log(events);
   const recurEvents = await PARSER.expandRecurEvents(events);
   return Promise.all(recurEvents);
 };

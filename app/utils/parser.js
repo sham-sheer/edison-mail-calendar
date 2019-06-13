@@ -296,11 +296,8 @@ const expandRecurEvents = async (results) => {
         .eq(recurMasterEvent.originalId)
         .exec();
       const recurTemp = parseRecurrence(recurPatternRecurId[0].toJSON(), recurMasterEvent);
-      console.log('here!!', recurTemp, merged);
       merged = [...merged, ...recurTemp];
-      console.log(merged);
       const final = merged.reduce((acc, val) => acc.concat(val), []);
-      // debugger;
       return final;
     });
   }
@@ -308,7 +305,6 @@ const expandRecurEvents = async (results) => {
 };
 
 const parseRecurrence = (pattern, recurMasterEvent) => {
-  // debugger;
   const recurEvents = [];
   const ruleSet = buildRuleSet(pattern, recurMasterEvent);
   const recurDates = ruleSet.all().map((date) => date.toJSON());
@@ -337,12 +333,10 @@ const parseRecurrence = (pattern, recurMasterEvent) => {
       isRecurring: recurMasterEvent.isRecurring
     });
   });
-  console.log(recurEvents);
   return recurEvents;
 };
 
 const buildRuleSet = (pattern, master) => {
-  // debugger;
   const rruleSet = new RRuleSet();
   const ruleObject = buildRuleObject(pattern, master);
   rruleSet.rrule(new RRule(ruleObject));
@@ -387,7 +381,6 @@ const buildRuleObject = (pattern, master) => {
 
 const getModifiedThenDeletedDates = (exDates, recurDates) => {
   const modifiedThenDeletedDates = [];
-  // debugger;
   exDates.forEach((exdate) => {
     recurDates.forEach((recurDate) => {
       if (exdate === recurDate) {
