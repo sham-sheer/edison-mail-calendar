@@ -17,7 +17,12 @@ import {
   beginGetOutlookEvents,
   beginGetExchangeEvents,
   beginDeleteEvent,
-  clearAllEvents
+  clearAllEvents,
+  editEventsBeginCaldav
+  // beginPollingEvents,
+  // endPollingEvents,
+  // beginPendingActions,
+  // endPendingActions
 } from '../actions/events';
 import {
   beginRetrieveCaldavEvents,
@@ -46,8 +51,8 @@ const mapDispatchToProps = dispatch => ({
   beginGetExchangeEvents: resp => dispatch(beginGetExchangeEvents(resp)),
   beginExchangeAuth: user => dispatch(beginExchangeAuth(user)),
 
-  retrieveStoreEvents: providerType =>
-    dispatch(retrieveStoreEvents(providerType)),
+  retrieveStoreEvents: (providerType, user) =>
+    dispatch(retrieveStoreEvents(providerType, user)),
   beginDeleteEvent: id => dispatch(beginDeleteEvent(id)),
 
   clearAllEvents: () => dispatch(clearAllEvents()),
@@ -59,11 +64,20 @@ const mapDispatchToProps = dispatch => ({
   onExpiredOutlook: user => dispatch(expiredOutlookAuth(user)),
   onExpiredGoogle: user => dispatch(expiredGoogleAuth(user)),
 
+  // beginPollingEvents: () => dispatch(beginPollingEvents()),
+  // endPollingEvents: () => dispatch(endPollingEvents()),
+  //
+  // beginPendingActions: providers => dispatch(beginPendingActions(providers)),
+  // endPendingActions: () => dispatch(endPendingActions()),
+
   beginRetrieveCalDavEvents: () => dispatch(beginRetrieveCaldavEvents()),
   resetCaldavAccount: () => dispatch(resetCaldavAccount()),
-  beginDeleteCalendarObject: payload =>
-    dispatch(beginDeleteCalendarObject(payload)),
-  beginUpdateCalendarObject: event => dispatch(beginUpdateCalendarObject(event))
+  beginDeleteCalendarObject: eventId =>
+    dispatch(beginDeleteCalendarObject(eventId)),
+  beginUpdateCalendarObject: event =>
+    dispatch(beginUpdateCalendarObject(event)),
+  editEventsBeginCaldav: currentEvent =>
+    dispatch(editEventsBeginCaldav(currentEvent))
 });
 
 export default connect(

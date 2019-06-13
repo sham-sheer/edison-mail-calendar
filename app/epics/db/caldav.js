@@ -12,54 +12,6 @@ import PARSER from '../../utils/parser';
 const dav = require('dav');
 const ICAL = require('ical.js');
 
-// export const retrieveCaldavEventsEpic = action$ =>
-//   action$.pipe(
-//     ofType(BEGIN_RETRIEVE_CALDAV_EVENTS),
-//     switchMap(action =>
-//       from(getDb()).pipe(
-//         switchMap(db =>
-//           from(db.events.find().exec()).pipe(
-//             map(events =>
-//               events.map(singleEvent => ({
-//                 id: singleEvent.id,
-//                 end: singleEvent.end,
-//                 start: singleEvent.start,
-//                 summary: singleEvent.summary,
-//                 organizer: singleEvent.organizer,
-//                 recurrence: singleEvent.recurrence,
-//                 iCalUID: singleEvent.iCalUID,
-//                 attendees: singleEvent.attendee,
-//                 originalId: singleEvent.originalId,
-//                 creator: singleEvent.creator,
-//                 isRecurring: singleEvent.isRecurring,
-//                 isModifiedThenDeleted: singleEvent.isModifiedThenDeleted
-//               }))
-//             ),
-//             // map(events => updateStoredEvents(events))
-//             switchMap(results =>
-//               from(PARSER.expandRecurEvents(results)).pipe(
-//                 switchMap(eventObjects => {
-//                   debugger;
-//                   return merge(eventObjects).pipe(
-//                     switchMap(mergedEventPromises => {
-//                       debugger;
-//                       return from(mergedEventPromises).pipe(
-//                         map(events => {
-//                           debugger;
-//                           return updateStoredEvents(events);
-//                         })
-//                       );
-//                     })
-//                   );
-//                 })
-//               )
-//             )
-//           )
-//         )
-//       )
-//     )
-//   );
-
 export const retrieveCaldavEventsEpic = action$ =>
   action$.pipe(
     ofType(BEGIN_RETRIEVE_CALDAV_EVENTS),
@@ -119,14 +71,19 @@ const storeCaldav = async payload => {
     const calendars = PARSER.parseCal(payload.calendars);
     const events = PARSER.parseCalEvents(payload.calendars);
     const flatEvents = events.reduce((acc, val) => acc.concat(val), []);
-    const eventPersons = PARSER.parseEventPersons(flatEvents);
-    const recurrenceEvents = PARSER.parseRecurrenceEvents(flatEvents);
+    const filteredEvents = flatEvents.filter(event => event !== '');
+    const flatFilteredEvents = filteredEvents.reduce(
+      (acc, val) => acc.concat(val),
+      []
+    );
+    const eventPersons = PARSER.parseEventPersons(flatFilteredEvents);
+    const recurrenceEvents = PARSER.parseRecurrenceEvents(flatFilteredEvents);
     const promises = [];
     calendars.forEach(calendar => {
       promises.push(db.calendars.upsert(calendar));
     });
-    flatEvents.forEach(calEvent => {
-      promises.push(db.events.upsert(calEvent.data));
+    flatFilteredEvents.forEach(calEvent => {
+      promises.push(db.events.upsert(calEvent.eventData));
     });
     eventPersons.forEach(eventPerson => {
       promises.push(db.eventpersons.upsert(eventPerson));

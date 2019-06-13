@@ -20,6 +20,17 @@ export default class AddEvent extends Component {
     // need to write validation method
     e.preventDefault();
     const { props } = this;
+    props.beginCreateCalendarObject({
+      summary: 'test event',
+      start: {
+        dateTime: moment(),
+        timezone: 'US/Pacific'
+      },
+      end: {
+        dateTime: moment().add(1, 'h'),
+        timezone: 'US/Pacific'
+      }
+    });
     props.history.push('/');
   };
 

@@ -4,6 +4,7 @@ import {
   RETRIEVE_STORED_EVENTS,
   DUPLICATE_ACTION
 } from '../actions/db/events';
+import { EDIT_EVENT_BEGIN_CALDAV } from '../actions/events';
 import {
   BEGIN_DELETE_CALENDAR_OBJECT,
   FAIL_DELETE_CALENDAR_OBJECT
@@ -12,7 +13,8 @@ import {
 const initialState = {
   calEvents: [],
   deletedEventId: '',
-  deleteError: ''
+  deleteError: '',
+  updateEventObject: ''
 };
 
 const mergeEvents = (oldEvents, newItems) => {
@@ -65,6 +67,10 @@ export default function eventsReducer(state = initialState, action) {
       return Object.assign({}, state, {
         deletedEventId: '',
         deleteError: action.payload
+      });
+    case EDIT_EVENT_BEGIN_CALDAV:
+      return Object.assign({}, state, {
+        updateEventObject: action.payload
       });
     default:
       return state;

@@ -33,6 +33,5 @@ export default {
     modifiedThenDeleted: {
       type: 'boolean'
     }
-  },
-  required: ['recurringTypeId']
+  }
 };

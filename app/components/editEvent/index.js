@@ -24,7 +24,8 @@ import {
   filterIntoSchema,
   OUTLOOK,
   EXCHANGE,
-  GOOGLE
+  GOOGLE,
+  CALDAV
 } from '../../utils/constants';
 
 export default class EditEvent extends React.Component {
@@ -83,7 +84,6 @@ export default class EditEvent extends React.Component {
     const { target } = event;
     const { value } = target;
     const { name } = target;
-    debugger;
     this.setState({
       [name]: value
     });
@@ -102,9 +102,7 @@ export default class EditEvent extends React.Component {
   handleSubmit = async e => {
     e.preventDefault();
     console.log(this.props, this.state);
-
     const { props, state } = this;
-
     switch (state.providerType) {
       case GOOGLE:
         await loadClient();
@@ -171,6 +169,25 @@ export default class EditEvent extends React.Component {
             }
           );
         break;
+      case CALDAV:
+        debugger;
+        const eventObject = {
+          id: props.updateEventObject.id,
+          summary: state.title,
+          description: props.updateEventObject.description,
+          start: moment(props.updateEventObject.start).format(),
+          end: moment(props.updateEventObject.end).format(),
+          iCalUID: props.updateEventObject.iCalUID,
+          location: ''
+        };
+        debugger;
+        props.beginUpdateCalendarObject({
+          eventObject,
+          iCalUID: state.iCalUID,
+          type: 'UPDATE_SINGLE_RECUR'
+        });
+        props.history.push(`/`);
+        break;
       default:
         break;
     }
@@ -215,19 +232,17 @@ export default class EditEvent extends React.Component {
   //     Have to think how to call the function when I might not have the object. This means that perhaps I should store the object in the main object.
   //     In order to retrive the event, I need to make a query from the script to get the javascript ews object. However, once I have it, I can update it easily.
   // */
-  retrieveEvent = async originalId => {
+  retrieveEvent = async id => {
+    debugger;
     const db = await getDb();
     const dbEvent = await db.events
       .find()
-      .where('originalId')
-      .eq(originalId)
+      .where('iCalUID')
+      .eq(id)
       .exec();
-    debugger;
     const dbEventJSON = dbEvent[0].toJSON();
-    console.log(dbEventJSON);
-
     this.setState({
-      id: dbEventJSON.originalId,
+      id: dbEventJSON.id,
       title: dbEventJSON.summary,
       description: dbEventJSON.description,
       start: dbEventJSON.start,
@@ -235,7 +250,8 @@ export default class EditEvent extends React.Component {
       attendees: dbEventJSON.attendees,
       hangoutLink: dbEventJSON.hangoutLink,
       providerType: dbEventJSON.providerType,
-      owner: dbEventJSON.owner
+      owner: dbEventJSON.owner,
+      iCalUID: dbEventJSON.iCalUID
     });
   };
 

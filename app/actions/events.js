@@ -10,10 +10,11 @@ export const MOVE_EVENT_BEGIN = 'BEGIN_MOVE_EVENT';
 export const MOVE_EVENT_SUCCESS = 'MOVE_EVENT_SUCCESS';
 export const MOVE_EVENT_FAILURE = 'MOVE_EVENT_FAILURE';
 
-// You good bro?
 export const EDIT_EVENT_BEGIN = 'EDIT_EVENT_BEGIN';
 export const EDIT_EVENT_SUCCESS = 'EDIT_EVENT_SUCCESS';
 export const EDIT_EVENT_FAILURE = 'EDIT_EVENT_FAILURE';
+
+export const EDIT_EVENT_BEGIN_CALDAV = 'EDIT_EVENT_BEGIN_CALDAV';
 
 export const QUICK_ADD_EVENT_BEGIN = 'QUICK_ADD_EVENT_BEGIN';
 export const QUICK_ADD_EVENT_SUCCESS = 'QUICK_ADD_EVENT_SUCCESS';
@@ -127,6 +128,11 @@ export const apiFailure = error => ({
   payload: {
     error
   }
+});
+
+export const editEventsBeginCaldav = currentEvent => ({
+  type: EDIT_EVENT_BEGIN_CALDAV,
+  payload: currentEvent
 });
 // ---------------------- EDIT EVENTS ---------------------- //
 

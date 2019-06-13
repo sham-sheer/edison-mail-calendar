@@ -355,8 +355,8 @@ export default class View extends React.Component {
   editEvent = () => {
     const { props } = this;
     const { state } = this;
-    debugger;
-    props.history.push(`/${state.currentEvent.originalId}`);
+    props.editEventsBeginCaldav(state.currentEvent);
+    props.history.push(`/${state.currentEvent.iCalUID}`);
     // const payload = {
     //   id: state.currentEvent.originalId
     // };
@@ -415,8 +415,20 @@ export default class View extends React.Component {
     const { props } = this;
     const { state } = this;
     // props.beginDeleteEvent(state.currentEvent.id);
-    debugger;
-    props.beginDeleteCalendarObject(state.currentEvent.iCalUID);
+    if (state.currentEvent.isRecurring) {
+      const eventObject = {
+        exdate: moment(state.currentEvent.start)
+          .utc()
+          .format()
+      };
+      props.beginUpdateCalendarObject({
+        eventObject,
+        iCalUID: state.currentEvent.iCalUID,
+        type: 'DELETE_SINGLE_RECUR'
+      });
+    } else {
+      props.beginDeleteCalendarObject(state.currentEvent.iCalUID);
+    }
     // props.beginDeleteCalendarObjec
     this.closeModal();
   };
