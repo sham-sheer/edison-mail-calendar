@@ -32,6 +32,16 @@ export default {
     },
     modifiedThenDeleted: {
       type: 'boolean'
+    },
+    weeklyPattern: {
+      type: 'array'
+    },
+    numberOfRepeats: {
+      type: 'number',
+      default: 0
+    },
+    iCalUid: {
+      type: 'string'
     }
   },
   required: ['recurringTypeId']

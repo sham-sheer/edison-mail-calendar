@@ -21,7 +21,9 @@ import {
   beginPollingEvents,
   endPollingEvents,
   beginPendingActions,
-  endPendingActions
+  endPendingActions,
+  beginDeleteRecurrenceSeries,
+  beginDeleteFutureRecurrenceSeries
 } from '../actions/events';
 import {
   beginRetrieveCaldavEvents,
@@ -51,7 +53,10 @@ const mapDispatchToProps = (dispatch) => ({
   beginExchangeAuth: (user) => dispatch(beginExchangeAuth(user)),
 
   retrieveStoreEvents: (providerType, user) => dispatch(retrieveStoreEvents(providerType, user)),
+
   beginDeleteEvent: (id) => dispatch(beginDeleteEvent(id)),
+  beginDeleteRecurrenceSeries: (id) => dispatch(beginDeleteRecurrenceSeries(id)),
+  beginDeleteFutureRecurrenceSeries: (id) => dispatch(beginDeleteFutureRecurrenceSeries(id)),
 
   clearAllEvents: () => dispatch(clearAllEvents()),
 

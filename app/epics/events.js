@@ -362,10 +362,7 @@ export const beginGetExchangeEventsEpics = (action$) =>
           resolve(asyncGetRecurrAndSingleExchangeEvents(exch));
         })
       ).pipe(
-        map((resp) => {
-          console.log(resp);
-          return getEventsSuccess(resp, Providers.EXCHANGE, action.payload.email);
-        }),
+        map((resp) => getEventsSuccess(resp, Providers.EXCHANGE, action.payload.email)),
         catchError((error) => of(error))
       )
     )
@@ -377,7 +374,6 @@ export const clearAllEventsEpics = (action$) =>
   action$.pipe(
     ofType(CLEAR_ALL_EVENTS),
     map(() => {
-      console.log('here?');
       localStorage.clear();
       RxDB.removeDatabase('eventsdb', 'websql');
       return clearAllEventsSuccess();
@@ -409,8 +405,8 @@ export const createCaldavAccountEpics = (action$) =>
 export const pollingEventsEpics = (action$) => {
   const stopPolling$ = action$.pipe(ofType(END_POLLING_EVENTS));
   return action$.pipe(
-    ofType(BEGIN_POLLING_EVENTS, UPDATE_STORED_EVENTS),
-    // ofType(BEGIN_POLLING_EVENTS),
+    // ofType(BEGIN_POLLING_EVENTS, UPDATE_STORED_EVENTS),
+    ofType(BEGIN_POLLING_EVENTS),
     switchMap((action) =>
       interval(10 * 1000).pipe(
         takeUntil(stopPolling$),

@@ -1,6 +1,7 @@
 import moment from 'moment';
 import md5 from 'md5';
 import { ExtendedPropertyDefinition, StringHelper } from 'ews-javascript-api';
+import uniqid from 'uniqid';
 import db from '../db';
 
 export const OUTLOOK = 'OUTLOOK';
@@ -166,7 +167,7 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
 
         Talk to shuhao tmr, and ask how you think we should deal with this case.
       */
-      schemaCastedDbObject.id = md5(dbEvent.Id === null ? id : dbEvent.Id.UniqueId);
+      schemaCastedDbObject.id = uniqid();
       schemaCastedDbObject.originalId = dbEvent.Id === null ? id : dbEvent.Id.UniqueId;
       schemaCastedDbObject.start = {
         dateTime: dbEvent.Start.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ')
@@ -183,9 +184,9 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
       schemaCastedDbObject.isRecurring = dbEvent.AppointmentType !== 'Single';
       schemaCastedDbObject.attendee = [];
       schemaCastedDbObject.iCalUID = dbEvent.ICalUid;
-      // if (schemaCastedDbObject.isRecurring) {
-      //   schemaCastedDbObject.recurringEventId = dbEvent.RecurrenceMasterId.UniqueId;
-      // }
+      if (schemaCastedDbObject.isRecurring) {
+        schemaCastedDbObject.recurringEventId = dbEvent.RecurrenceMasterId.UniqueId;
+      }
       // { iCalUID: { value: 'ICalUid', defaultValue: '', type: 'needed' } },
 
       [

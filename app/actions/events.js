@@ -39,6 +39,14 @@ export const END_POLLING_EVENTS = 'END_POLLING_EVENTS';
 export const BEGIN_PENDING_ACTIONS = 'BEGIN_PENDING_ACTIONS';
 export const END_PENDING_ACTIONS = 'END_PENDING_ACTIONS';
 
+export const DELETE_RECURRENCE_SERIES_BEGIN = 'DELETE_RECURRENCE_SERIES_BEGIN';
+export const DELETE_RECURRENCE_SERIES_SUCCESS = 'DELETE_RECURRENCE_SERIES_SUCCESS';
+export const DELETE_RECURRENCE_SERIES_FAILURE = 'DELETE_RECURRENCE_SERIES_FAILURE';
+
+export const DELETE_FUTURE_RECURRENCE_SERIES_BEGIN = 'DELETE_FUTURE_RECURRENCE_SERIES_BEGIN';
+export const DELETE_FUTURE_RECURRENCE_SERIES_SUCCESS = 'DELETE_FUTURE_RECURRENCE_SERIES_SUCCESS';
+export const DELETE_FUTURE_RECURRENCE_SERIES_FAILURE = 'DELETE_FUTURE_RECURRENCE_SERIES_FAILURE';
+
 export const beginGetGoogleEvents = (resp) => ({
   type: GET_EVENTS_BEGIN,
   payload: resp
@@ -185,3 +193,15 @@ export const endPendingActions = (payload) => ({
   type: END_PENDING_ACTIONS
 });
 // ---------------------- POLLING ---------------------- //
+
+// --------------- DELETE RECURR SERIES ---------------- //
+export const beginDeleteRecurrenceSeries = (id) => ({
+  type: DELETE_RECURRENCE_SERIES_BEGIN,
+  payload: id
+});
+
+export const beginDeleteFutureRecurrenceSeries = (id) => ({
+  type: DELETE_FUTURE_RECURRENCE_SERIES_BEGIN,
+  payload: id
+});
+// --------------- DELETE RECURR SERIES ---------------- //

@@ -181,8 +181,11 @@ export default class View extends React.Component {
   editEvent = () => {
     const { props } = this;
     const { state } = this;
-    debugger;
-    props.history.push(`/${state.currentEvent.originalId}`);
+    console.log(state, props);
+    props.history.push(`/${state.currentEvent.id}`);
+
+    // debugger;
+    // props.history.push(`/${state.currentEvent.originalId}`);
     // const payload = {
     //   id: state.currentEvent.originalId
     // };
@@ -241,6 +244,20 @@ export default class View extends React.Component {
     this.closeModal();
   };
 
+  deleteAllRecurrenceEvent = () => {
+    const { props } = this;
+    const { state } = this;
+    props.beginDeleteRecurrenceSeries(state.currentEvent.id);
+    this.closeModal();
+  };
+
+  deleteFutureRecurrenceEvent = () => {
+    const { props } = this;
+    const { state } = this;
+    props.beginDeleteFutureRecurrenceSeries(state.currentEvent.id);
+    this.closeModal();
+  };
+
   getVisibleEvents = () => {
     const { props } = this;
     const { events } = props;
@@ -291,6 +308,12 @@ export default class View extends React.Component {
       </button>
       <button type="button" onClick={this.editEvent}>
         Edit
+      </button>
+      <button type="button" onClick={this.deleteAllRecurrenceEvent}>
+        Delete Series
+      </button>
+      <button type="button" onClick={this.deleteFutureRecurrenceEvent}>
+        Delete this and Future Events
       </button>
     </Modal>
   );
