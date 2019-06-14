@@ -25,10 +25,7 @@ export const buildICALStringUpdateOnly = (updatedEvent, calendarObject) => {
   vevent.updatePropertyWithValue('dtend', updatedEvent.end);
   vevent.getFirstProperty('dtend').setParameter('tzid', 'US/Pacific');
 
-  vevent.updatePropertyWithValue(
-    'x-apple-travel-advisory-behavior',
-    'AUTOMATIC'
-  );
+  vevent.updatePropertyWithValue('x-apple-travel-advisory-behavior', 'AUTOMATIC');
   vevent.updatePropertyWithValue('transp', 'OPAQUE');
   calendarComp.addSubcomponent(vevent);
   calendarComp.addSubcomponent(timezoneMetadata);
@@ -36,7 +33,7 @@ export const buildICALStringUpdateOnly = (updatedEvent, calendarObject) => {
   return calendarComp.toString();
 };
 
-export const buildICALStringUpdateAll = eventObject => {
+export const buildICALStringUpdateAll = (eventObject) => {
   const calendarData = ICAL.parse(eventObject.ICALString);
   const calendarComp = new ICAL.Component(calendarData);
   const vevent = calendarComp.getFirstSubcomponent('vevent');
@@ -54,11 +51,7 @@ export const buildICALStringUpdateAll = eventObject => {
   return calendarComp.toString();
 };
 
-export const buildICALStringDeleteRecurEvent = (
-  recurPattern,
-  exDate,
-  eventObject
-) => {
+export const buildICALStringDeleteRecurEvent = (recurPattern, exDate, eventObject) => {
   debugger;
   const calendarData = ICAL.parse(eventObject.ICALString);
   const vcalendar = new ICAL.Component(calendarData);
@@ -69,8 +62,8 @@ export const buildICALStringDeleteRecurEvent = (
 
 export const fromICALString = (string, value) => {};
 
-export const toICALString = string => {};
+export const toICALString = (string) => {};
 
-export const updateICALString = eventObject => {};
+export const updateICALString = (eventObject) => {};
 
-export const updateModifiedICALString = eventObject => {};
+export const updateModifiedICALString = (eventObject) => {};

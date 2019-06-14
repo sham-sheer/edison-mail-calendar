@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import Select from 'react-select';
 
 class Conference extends Component {
-  handleSelectChange = conference => {
+  handleSelectChange = (conference) => {
     const { props } = this;
     props.onConferChanged({
       name: props.name,
@@ -20,11 +20,7 @@ class Conference extends Component {
     return (
       <div>
         <h5>Conferencing</h5>
-        <Select
-          value={props.conference}
-          options={options}
-          onChange={this.handleSelectChange}
-        />
+        <Select value={props.conference} options={options} onChange={this.handleSelectChange} />
       </div>
     );
   }

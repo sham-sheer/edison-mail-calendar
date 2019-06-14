@@ -5,7 +5,7 @@ import { postEventBegin } from '../actions/events';
 import { beginCreateCalendarObject } from '../actions/caldav';
 import AddEvent from '../components/addEvent';
 
-const styles = theme => ({
+const styles = (theme) => ({
   container: {
     display: 'flex',
     flexWrap: 'wrap'
@@ -21,16 +21,14 @@ const styles = theme => ({
   cssFocused: {}
 });
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   events: state.events,
   providers: state.auth.providers
 });
 
-const mapDispatchToProps = dispatch => ({
-  postEventBegin: (event, auth, type) =>
-    dispatch(postEventBegin(event, auth, type)),
-  beginCreateCalendarObject: payload =>
-    dispatch(beginCreateCalendarObject(payload))
+const mapDispatchToProps = (dispatch) => ({
+  postEventBegin: (event, auth, type) => dispatch(postEventBegin(event, auth, type)),
+  beginCreateCalendarObject: (payload) => dispatch(beginCreateCalendarObject(payload))
 });
 
 export default connect(

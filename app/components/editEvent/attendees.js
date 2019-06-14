@@ -10,10 +10,7 @@ class Attendees extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { props } = this;
-    if (
-      props.attendees !== prevProps.attendees &&
-      props.attendees !== undefined
-    ) {
+    if (props.attendees !== prevProps.attendees && props.attendees !== undefined) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({
         attendees: props.attendees
@@ -21,7 +18,7 @@ class Attendees extends React.Component {
     }
   }
 
-  handleSelectChange = async attendee => {
+  handleSelectChange = async (attendee) => {
     this.setState({ attendee });
     const { props } = this;
     props.onAttendeeChanged({
@@ -33,7 +30,7 @@ class Attendees extends React.Component {
   render() {
     const { state } = this;
 
-    const input = state.attendees.map(attendee => {
+    const input = state.attendees.map((attendee) => {
       const { email } = attendee;
       return (
         <li>
@@ -49,7 +46,7 @@ class Attendees extends React.Component {
       { value: 'sameenhaja@yahoo.com.sg', label: 'sameenhaja@yahoo.com.sg' },
       { value: 'shuhao@edison.tech', label: 'shuhao@edison.tech' }
     ];
-    const defaultList = state.attendees.map(attendee => ({
+    const defaultList = state.attendees.map((attendee) => ({
       value: attendee.email,
       label: attendee.email
     }));

@@ -1,14 +1,11 @@
 import React, { Component } from 'react';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
-import MomentLocaleUtils, {
-  formatDate,
-  parseDate
-} from 'react-day-picker/moment';
+import MomentLocaleUtils, { formatDate, parseDate } from 'react-day-picker/moment';
 import 'react-day-picker/lib/style.css';
 import moment from 'moment';
 
 class Date extends Component {
-  handleClickDay = day => {
+  handleClickDay = (day) => {
     const momentDay = moment(day).format();
     const { props } = this;
     props.dayProps({

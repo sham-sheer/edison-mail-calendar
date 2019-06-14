@@ -33,41 +33,41 @@ export const beginRetrieveCaldavEvents = () => ({
   type: BEGIN_RETRIEVE_CALDAV_EVENTS
 });
 
-export const beginCreateAccount = payload => ({
+export const beginCreateAccount = (payload) => ({
   type: BEGIN_CREATE_ACCOUNT,
   payload
 });
-export const successCreateAcount = payload => ({
+export const successCreateAcount = (payload) => ({
   type: SUCCESS_CREATE_ACCOUNT,
   payload
 });
-export const failCreateAccount = error => ({
+export const failCreateAccount = (error) => ({
   type: FAIL_CREATE_ACCOUNT,
   error
 });
 
-export const beginCreateCalendarObject = payload => ({
+export const beginCreateCalendarObject = (payload) => ({
   type: BEGIN_CREATE_CALENDAR_OBJECT,
   payload
 });
-export const successCreateCalendarObject = payload => ({
+export const successCreateCalendarObject = (payload) => ({
   type: SUCCESS_CREATE_CALENDAR_OBJECT,
   payload
 });
-export const failCreateCalendarObject = error => ({
+export const failCreateCalendarObject = (error) => ({
   type: FAIL_CREATE_CALENDAR_OBJECT,
   error
 });
 
-export const beginUpdateCalendarObject = payload => ({
+export const beginUpdateCalendarObject = (payload) => ({
   type: BEGIN_UPDATE_CALENDAR_OBJECT,
   payload
 });
-export const successUpdateCalendarObject = payload => ({
+export const successUpdateCalendarObject = (payload) => ({
   type: SUCCESS_UPDATE_CALENDAR_OBJECT,
   payload
 });
-export const failUpdateCalendarObject = error => ({
+export const failUpdateCalendarObject = (error) => ({
   type: FAIL_UPDATE_CALENDAR_OBJECT,
   error
 });
@@ -80,34 +80,34 @@ export const beginDeleteCalendarObject = (eventId, isSeries, isChild) => ({
     isChild
   }
 });
-export const successDeleteCalendarObject = payload => ({
+export const successDeleteCalendarObject = (payload) => ({
   type: SUCCESS_DELETE_CALENDAR_OBJECT,
   payload
 });
-export const failDeleteCalendarObject = error => ({
+export const failDeleteCalendarObject = (error) => ({
   type: FAIL_DELETE_CALENDAR_OBJECT,
   error
 });
 
-export const beginSyncCalendar = payload => ({
+export const beginSyncCalendar = (payload) => ({
   type: BEGIN_SYNC_CALENDAR,
   payload
 });
-export const successSyncCalendar = payload => ({
+export const successSyncCalendar = (payload) => ({
   type: SUCCESS_SYNC_CALENDAR,
   payload
 });
-export const failSyncCalendar = error => ({ type: FAIL_SYNC_CALENDAR, error });
+export const failSyncCalendar = (error) => ({ type: FAIL_SYNC_CALENDAR, error });
 
-export const beginSyncCalDav = payload => ({
+export const beginSyncCalDav = (payload) => ({
   type: BEGIN_SYNC_CALDAV_ACCOUNT,
   payload
 });
-export const successSyncCalDav = payload => ({
+export const successSyncCalDav = (payload) => ({
   type: SUCCESS_SYNC_CALDAV_ACCOUNT,
   payload
 });
-export const failSyncCalDav = error => ({
+export const failSyncCalDav = (error) => ({
   type: FAIL_SYNC_CALDAV_ACCOUNT,
   error
 });

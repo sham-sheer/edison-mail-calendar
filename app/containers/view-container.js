@@ -18,11 +18,13 @@ import {
   beginGetExchangeEvents,
   beginDeleteEvent,
   clearAllEvents,
+  beginPollingEvents,
+  endPollingEvents,
+  beginPendingActions,
+  endPendingActions,
+  beginDeleteRecurrenceSeries,
+  beginDeleteFutureRecurrenceSeries,
   editEventsBeginCaldav
-  // beginPollingEvents,
-  // endPollingEvents,
-  // beginPendingActions,
-  // endPendingActions
 } from '../actions/events';
 import {
   beginRetrieveCaldavEvents,
@@ -32,7 +34,7 @@ import {
 } from '../actions/caldav';
 import getFilteredEvents from '../selectors/ui-selector';
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   events: getFilteredEvents(state),
   initialSync: state.events.initialSync,
   isAuth: state.auth.isAuth,
@@ -41,28 +43,36 @@ const mapStateToProps = state => ({
   deletedEventId: state.events.deletedEventId
 });
 
-const mapDispatchToProps = dispatch => ({
-  beginGetGoogleEvents: user => dispatch(beginGetGoogleEvents(user)),
+const mapDispatchToProps = (dispatch) => ({
+  beginGetGoogleEvents: (user) => dispatch(beginGetGoogleEvents(user)),
   beginGoogleAuth: () => dispatch(beginGoogleAuth()),
 
-  beginGetOutlookEvents: resp => dispatch(beginGetOutlookEvents(resp)),
+  beginGetOutlookEvents: (resp) => dispatch(beginGetOutlookEvents(resp)),
   beginOutlookAuth: () => dispatch(beginOutlookAuth()),
 
-  beginGetExchangeEvents: resp => dispatch(beginGetExchangeEvents(resp)),
-  beginExchangeAuth: user => dispatch(beginExchangeAuth(user)),
+  beginGetExchangeEvents: (resp) => dispatch(beginGetExchangeEvents(resp)),
+  beginExchangeAuth: (user) => dispatch(beginExchangeAuth(user)),
 
-  retrieveStoreEvents: (providerType, user) =>
-    dispatch(retrieveStoreEvents(providerType, user)),
-  beginDeleteEvent: id => dispatch(beginDeleteEvent(id)),
+  retrieveStoreEvents: (providerType, user) => dispatch(retrieveStoreEvents(providerType, user)),
+
+  beginDeleteEvent: (id) => dispatch(beginDeleteEvent(id)),
+  beginDeleteRecurrenceSeries: (id) => dispatch(beginDeleteRecurrenceSeries(id)),
+  beginDeleteFutureRecurrenceSeries: (id) => dispatch(beginDeleteFutureRecurrenceSeries(id)),
 
   clearAllEvents: () => dispatch(clearAllEvents()),
 
-  onStartGetGoogleAuth: user => dispatch(successGoogleAuth(user)),
-  onStartGetOutlookAuth: user => dispatch(successOutlookAuth(user)),
-  onStartGetExchangeAuth: user => dispatch(successExchangeAuth(user)),
+  onStartGetGoogleAuth: (user) => dispatch(successGoogleAuth(user)),
+  onStartGetOutlookAuth: (user) => dispatch(successOutlookAuth(user)),
+  onStartGetExchangeAuth: (user) => dispatch(successExchangeAuth(user)),
 
-  onExpiredOutlook: user => dispatch(expiredOutlookAuth(user)),
-  onExpiredGoogle: user => dispatch(expiredGoogleAuth(user)),
+  onExpiredOutlook: (user) => dispatch(expiredOutlookAuth(user)),
+  onExpiredGoogle: (user) => dispatch(expiredGoogleAuth(user)),
+
+  beginPollingEvents: () => dispatch(beginPollingEvents()),
+  endPollingEvents: () => dispatch(endPollingEvents()),
+
+  beginPendingActions: (providers) => dispatch(beginPendingActions(providers)),
+  endPendingActions: () => dispatch(endPendingActions()),
 
   // beginPollingEvents: () => dispatch(beginPollingEvents()),
   // endPollingEvents: () => dispatch(endPollingEvents()),
@@ -72,12 +82,9 @@ const mapDispatchToProps = dispatch => ({
 
   beginRetrieveCalDavEvents: () => dispatch(beginRetrieveCaldavEvents()),
   resetCaldavAccount: () => dispatch(resetCaldavAccount()),
-  beginDeleteCalendarObject: eventId =>
-    dispatch(beginDeleteCalendarObject(eventId)),
-  beginUpdateCalendarObject: event =>
-    dispatch(beginUpdateCalendarObject(event)),
-  editEventsBeginCaldav: currentEvent =>
-    dispatch(editEventsBeginCaldav(currentEvent))
+  beginDeleteCalendarObject: (eventId) => dispatch(beginDeleteCalendarObject(eventId)),
+  beginUpdateCalendarObject: (event) => dispatch(beginUpdateCalendarObject(event)),
+  editEventsBeginCaldav: (currentEvent) => dispatch(editEventsBeginCaldav(currentEvent))
 });
 
 export default connect(

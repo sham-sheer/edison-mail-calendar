@@ -164,6 +164,19 @@ export default {
       // incomplete is a flag to mark that it was just created and might not be complete
       type: 'boolean'
     },
+    local: {
+      // local for dealing with pending actions
+      type: 'boolean',
+      default: true
+    },
+    hide: {
+      type: 'boolean',
+      default: false
+    },
+    createdOffline: {
+      type: 'boolean',
+      default: false
+    },
     metaData: {
       type: 'object'
     },

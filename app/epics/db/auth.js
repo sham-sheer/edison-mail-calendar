@@ -7,52 +7,52 @@ import getDb from '../../db';
 import * as AuthActionTypes from '../../actions/auth';
 import * as Providers from '../../utils/constants';
 
-export const storeGoogleAuthEpic = action$ =>
+export const storeGoogleAuthEpic = (action$) =>
   action$.pipe(
     ofType(AuthActionTypes.SUCCESS_GOOGLE_AUTH),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(storeUser(action.payload.user)).pipe(
-        mergeMap(resp =>
-          of(successStoreAuth(), retrieveStoreEvents(Providers.GOOGLE))
+        mergeMap((resp) =>
+          of(successStoreAuth(), retrieveStoreEvents(Providers.GOOGLE, action.payload.user))
         ),
-        catchError(error => {
+        catchError((error) => {
           of(console.log(error));
         })
       )
     )
   );
 
-export const storeOutLookAuthEpic = action$ =>
+export const storeOutLookAuthEpic = (action$) =>
   action$.pipe(
     ofType(AuthActionTypes.SUCCESS_OUTLOOK_AUTH),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(storeUser(action.payload.user)).pipe(
-        mergeMap(resp =>
-          of(successStoreAuth(), retrieveStoreEvents(Providers.OUTLOOK))
+        mergeMap((resp) =>
+          of(successStoreAuth(), retrieveStoreEvents(Providers.OUTLOOK, action.payload.user))
         ),
-        catchError(error => {
+        catchError((error) => {
           of(console.log(error));
         })
       )
     )
   );
 
-export const storeExchangeAuthEpic = action$ =>
+export const storeExchangeAuthEpic = (action$) =>
   action$.pipe(
     ofType(AuthActionTypes.SUCCESS_EXCHANGE_AUTH),
-    mergeMap(action =>
+    mergeMap((action) =>
       from(storeUser(action.payload.user)).pipe(
-        mergeMap(resp =>
-          of(successStoreAuth(), retrieveStoreEvents(Providers.EXCHANGE))
+        mergeMap((resp) =>
+          of(successStoreAuth(), retrieveStoreEvents(Providers.EXCHANGE, action.payload.user))
         ),
-        catchError(error => {
+        catchError((error) => {
           of(console.log(error));
         })
       )
     )
   );
 
-const storeUser = async user => {
+const storeUser = async (user) => {
   const db = await getDb();
   let userDb = '';
   try {

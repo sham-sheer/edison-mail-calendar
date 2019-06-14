@@ -3,7 +3,7 @@ import ICAL from 'ical.js';
 
 // Main Functions
 
-export const getICALString = eventObject => {
+export const getICALString = (eventObject) => {
   const ICALReadyEvent = trimEventObject(eventObject);
   const ICALEntries = Object.entries(ICALReadyEvent);
   const iCalendarData =
@@ -16,22 +16,20 @@ export const getICALString = eventObject => {
   const jcalData = ICAL.parse(iCalendarData);
   const vcalendar = new ICAL.Component(jcalData);
   const vevent = vcalendar.getFirstSubcomponent('vevent');
-  ICALEntries.forEach(entry =>
-    vevent.updatePropertyWithValue(entry[0], entry[1])
-  );
+  ICALEntries.forEach((entry) => vevent.updatePropertyWithValue(entry[0], entry[1]));
   debugger;
   return iCalendarData;
 };
 
-export const fromICALString = string => {};
+export const fromICALString = (string) => {};
 
-export const updateICALString = eventObject => {};
+export const updateICALString = (eventObject) => {};
 
-export const updateModifiedICALString = eventObject => {};
+export const updateModifiedICALString = (eventObject) => {};
 
 // Helper Functions
 
-const trimEventObject = eventObject => ({
+const trimEventObject = (eventObject) => ({
   summary: eventObject.summary,
   description: eventObject.description,
   location: eventObject.location,

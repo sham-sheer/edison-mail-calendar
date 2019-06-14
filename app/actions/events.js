@@ -34,7 +34,21 @@ export const DELETE_EVENT_FAILURE_API = 'DELETE_EVENT_FAILURE_API';
 
 export const API_ERROR = 'API_ERROR';
 
-export const beginGetGoogleEvents = resp => ({
+export const BEGIN_POLLING_EVENTS = 'BEGIN_POLLING_EVENTS';
+export const END_POLLING_EVENTS = 'END_POLLING_EVENTS';
+
+export const BEGIN_PENDING_ACTIONS = 'BEGIN_PENDING_ACTIONS';
+export const END_PENDING_ACTIONS = 'END_PENDING_ACTIONS';
+
+export const DELETE_RECURRENCE_SERIES_BEGIN = 'DELETE_RECURRENCE_SERIES_BEGIN';
+export const DELETE_RECURRENCE_SERIES_SUCCESS = 'DELETE_RECURRENCE_SERIES_SUCCESS';
+export const DELETE_RECURRENCE_SERIES_FAILURE = 'DELETE_RECURRENCE_SERIES_FAILURE';
+
+export const DELETE_FUTURE_RECURRENCE_SERIES_BEGIN = 'DELETE_FUTURE_RECURRENCE_SERIES_BEGIN';
+export const DELETE_FUTURE_RECURRENCE_SERIES_SUCCESS = 'DELETE_FUTURE_RECURRENCE_SERIES_SUCCESS';
+export const DELETE_FUTURE_RECURRENCE_SERIES_FAILURE = 'DELETE_FUTURE_RECURRENCE_SERIES_FAILURE';
+
+export const beginGetGoogleEvents = (resp) => ({
   type: GET_EVENTS_BEGIN,
   payload: resp
 });
@@ -48,7 +62,7 @@ export const postEventBegin = (calEvent, auth, providerType) => ({
   }
 });
 
-export const getEventsFailure = error => ({
+export const getEventsFailure = (error) => ({
   type: GET_EVENTS_FAILURE,
   payload: {
     error
@@ -73,14 +87,14 @@ export const postEventSuccess = (response, providerType, owner) => ({
   }
 });
 
-export const beginDeleteEvent = id => ({
+export const beginDeleteEvent = (id) => ({
   type: DELETE_EVENT_BEGIN,
   payload: id
 });
 
-export const deleteEventSuccess = id => ({
+export const deleteEventSuccess = (id, user) => ({
   type: DELETE_EVENT_SUCCESS,
-  payload: id
+  payload: { id, user }
 });
 
 // ---------------------- OUTLOOK ---------------------- //
@@ -88,17 +102,17 @@ export const GET_OUTLOOK_EVENTS_BEGIN = 'GET_OUTLOOK_EVENTS_BEGIN';
 export const GET_OUTLOOK_EVENTS_SUCCESS = 'GET_OUTLOOK_EVENTS_SUCCESS';
 export const GET_OUTLOOK_EVENTS_FAILURE = 'GET_OUTLOOK_EVENTS_FAILURE';
 
-export const beginGetOutlookEvents = resp => ({
+export const beginGetOutlookEvents = (resp) => ({
   type: GET_OUTLOOK_EVENTS_BEGIN,
   payload: resp
 });
 
-export const postOutlookEventBegin = calEvent => ({
+export const postOutlookEventBegin = (calEvent) => ({
   type: GET_OUTLOOK_EVENTS_FAILURE,
   payload: calEvent
 });
 
-export const getOutlookEventsSuccess = response => ({
+export const getOutlookEventsSuccess = (response) => ({
   type: GET_OUTLOOK_EVENTS_SUCCESS,
   payload: {
     data: response
@@ -116,21 +130,21 @@ export const editEventBegin = (id, eventObject, providerType) => ({
   }
 });
 
-export const editEventSuccess = resp => ({
+export const editEventSuccess = (resp) => ({
   type: EDIT_EVENT_SUCCESS,
   payload: {
     resp
   }
 });
 
-export const apiFailure = error => ({
+export const apiFailure = (error) => ({
   type: API_ERROR,
   payload: {
     error
   }
 });
 
-export const editEventsBeginCaldav = currentEvent => ({
+export const editEventsBeginCaldav = (currentEvent) => ({
   type: EDIT_EVENT_BEGIN_CALDAV,
   payload: currentEvent
 });
@@ -141,12 +155,12 @@ export const GET_EXCHANGE_EVENTS_BEGIN = 'GET_EXCHANGE_EVENTS_BEGIN';
 export const GET_EXCHANGE_EVENTS_SUCCESS = 'GET_EXCHANGE_EVENTS_SUCCESS';
 export const GET_EXCHANGE_EVENTS_FAILURE = 'GET_EXCHANGE_EVENTS_FAILURE';
 
-export const beginGetExchangeEvents = resp => ({
+export const beginGetExchangeEvents = (resp) => ({
   type: GET_EXCHANGE_EVENTS_BEGIN,
   payload: resp
 });
 
-export const getExchangeEventsSuccess = resp => ({
+export const getExchangeEventsSuccess = (resp) => ({
   type: GET_EXCHANGE_EVENTS_SUCCESS,
   payload: resp
 });
@@ -164,3 +178,36 @@ export const clearAllEventsSuccess = () => ({
   type: CLEAR_ALL_EVENTS_SUCCESS
 });
 // ---------------------- GENERAL ---------------------- //
+
+// ---------------------- POLLING ---------------------- //
+export const beginPollingEvents = (payload) => ({
+  type: BEGIN_POLLING_EVENTS
+});
+
+export const endPollingEvents = (payload) => ({
+  type: END_POLLING_EVENTS
+});
+// ---------------------- POLLING ---------------------- //
+
+// ---------------------- POLLING ---------------------- //
+export const beginPendingActions = (payload) => ({
+  type: BEGIN_PENDING_ACTIONS,
+  payload
+});
+
+export const endPendingActions = (payload) => ({
+  type: END_PENDING_ACTIONS
+});
+// ---------------------- POLLING ---------------------- //
+
+// --------------- DELETE RECURR SERIES ---------------- //
+export const beginDeleteRecurrenceSeries = (id) => ({
+  type: DELETE_RECURRENCE_SERIES_BEGIN,
+  payload: id
+});
+
+export const beginDeleteFutureRecurrenceSeries = (id) => ({
+  type: DELETE_FUTURE_RECURRENCE_SERIES_BEGIN,
+  payload: id
+});
+// --------------- DELETE RECURR SERIES ---------------- //
