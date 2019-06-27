@@ -22,10 +22,14 @@ import {
   DeleteMode,
   AppointmentSchema,
   AppointmentType,
-  ItemView
+  ItemView,
+  Recurrence,
+  DailyPattern,
+  DayOfTheWeekCollection
 } from 'ews-javascript-api';
 import moment from 'moment';
-import uniqid from 'uniqid';
+// import uniqid from 'uniqid';
+import uuidv4 from 'uuid';
 import * as ProviderTypes from '../constants';
 import getDb from '../../db';
 import {
@@ -117,17 +121,35 @@ export const asyncUpdateExchangeEvent = async (singleAppointment, user, callback
       .Update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsOrCancellationsMode.SendToNone)
       .then(
         async (success) => {
+          // Re-Get the data for EWS to populate the fields, through server side.
           const updatedItem = await asyncGetSingleExchangeEvent(
             user.email,
             user.password,
             'https://outlook.office365.com/Ews/Exchange.asmx',
             singleAppointment.Id.UniqueId
           );
+
+          // Get the previous copy from our DB through originalId.
           const db = await getDb();
-          const doc = await db.events.atomicUpsert(
-            ProviderTypes.filterIntoSchema(updatedItem, ProviderTypes.EXCHANGE, user.email, false)
+          const query = db.events
+            .findOne()
+            .where('originalId')
+            .eq(singleAppointment.Id.UniqueId);
+
+          const localDbCopy = await query.exec();
+          updatedItem.RecurrenceMasterId = localDbCopy.recurringEventId;
+
+          const filteredItem = ProviderTypes.filterIntoSchema(
+            updatedItem,
+            ProviderTypes.EXCHANGE,
+            user.email,
+            false
           );
-          const data = await db.events.find().exec();
+          filteredItem.id = localDbCopy.id;
+
+          await query.update({
+            $set: filteredItem
+          });
           callback();
           return editEventSuccess(updatedItem);
         },
@@ -164,7 +186,7 @@ export const asyncUpdateRecurrExchangeSeries = async (singleAppointment, user, c
 
           // TO-DO, add more values for updating.
           localDbItems.forEach((localRecurringItem) => {
-            localRecurringItem.update({
+            localRecurringItem.atomicUpdate({
               $set: {
                 summary: updatedItem.Subject
               }
@@ -188,7 +210,7 @@ export const asyncUpdateRecurrExchangeSeries = async (singleAppointment, user, c
         }
       );
   } catch (error) {
-    console.log('(asyncUpdateExchangeEvent) Error: ', error);
+    console.log('(asyncUpdateRecurrExchangeSeries) Error: ', error);
     throw error;
   }
 };
@@ -203,7 +225,7 @@ export const asyncDeleteExchangeEvent = async (singleAppointment, user, callback
           .where('originalId')
           .eq(singleAppointment.Id.UniqueId);
         await query.remove();
-        const data = await db.events.find().exec();
+        // const data = await db.events.find().exec();
         // console.log(data);
         // console.log(DateTime.Now, DateTime.UtcNow);
         callback();
@@ -246,11 +268,13 @@ export const asyncGetRecurrAndSingleExchangeEvents = async (exch) => {
   );
 
   const recurrMasterEvents = await asyncGetExchangeRecurrMasterEvents(exch);
+  console.log(mapOfRecurrEvents, recurrMasterEvents);
   for (const [key, value] of mapOfRecurrEvents) {
     const recurrMasterId = recurrMasterEvents.get(key).Id;
     value.forEach((event) => (event.RecurrenceMasterId = recurrMasterId));
     exchangeEventsWithBody.push(...value);
   }
+  console.log(exchangeEventsWithBody);
 
   return exchangeEventsWithBody;
 };
@@ -311,21 +335,51 @@ const asyncGetExchangeBodyEvents = async (exch, arrayOfNonRecurrIds, exchangeEve
   return exchangeEventsWithBody;
 };
 
-export const parseEwsRecurringPatterns = (id, ews) => ({
-  id: uniqid(),
-  originalId: id,
-  freq: parseEwsFreq(ews.XmlElementName),
-  interval: parseInt(ews.Interval, 10),
-  recurringTypeId: ews.StartDate.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ'),
-  until: ews.EndDate === null ? '' : ews.EndDate.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ'),
-  // TO-DO, actually populate this properly.
-  exDates: [],
-  recurrenceIds: [],
-  modifiedThenDeleted: false,
-  weeklyPattern:
-    ews.XmlElementName === 'WeeklyRecurrence' ? convertDaysToArray(ews.DaysOfTheWeek.items) : [],
-  numberOfRepeats: ews.NumberOfOccurrences === null ? 0 : ews.NumberOfOccurrences
-});
+export const parseEwsRecurringPatterns = (
+  id,
+  ews,
+  iCalUid,
+  deletedOccurrences,
+  editedOccurrences
+) => {
+  console.log(ews, deletedOccurrences, editedOccurrences);
+  return {
+    id: uuidv4(),
+    originalId: id,
+    freq: parseEwsFreq(ews.XmlElementName),
+    interval: parseInt(ews.Interval, 10),
+    recurringTypeId: ews.StartDate.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ'),
+    until: ews.EndDate === null ? '' : ews.EndDate.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ'),
+    iCalUid,
+    // TO-DO, actually populate this properly.
+    exDates:
+      deletedOccurrences === null
+        ? []
+        : deletedOccurrences.Items.map((deletedOccur) =>
+            deletedOccur.OriginalStart.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ')
+          ).filter(
+            (deletedRecurrString) =>
+              moment(deletedRecurrString).isAfter(ews.StartDate.getMomentDate()) &&
+              (ews.EndDate === null ||
+                moment(deletedRecurrString).isBefore(ews.EndDate.getMomentDate()))
+          ),
+    recurrenceIds:
+      editedOccurrences === null
+        ? []
+        : editedOccurrences.Items.map((editedOccur) =>
+            editedOccur.OriginalStart.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ')
+          ).filter(
+            (editedRecurrString) =>
+              moment(editedRecurrString).isAfter(ews.StartDate.getMomentDate()) &&
+              (ews.EndDate === null ||
+                moment(editedRecurrString).isBefore(ews.EndDate.getMomentDate()))
+          ),
+    modifiedThenDeleted: false,
+    weeklyPattern:
+      ews.XmlElementName === 'WeeklyRecurrence' ? convertDaysToArray(ews.DaysOfTheWeek.items) : [],
+    numberOfRepeats: ews.NumberOfOccurrences === null ? 0 : ews.NumberOfOccurrences
+  };
+};
 
 const convertDaysToArray = (arrayVals) => {
   const arr = [0, 0, 0, 0, 0, 0, 0];
@@ -378,8 +432,12 @@ export const asyncGetExchangeRecurrMasterEvents = async (exch) => {
             console.log(event);
             const dbRecurrencePattern = parseEwsRecurringPatterns(
               event.Id.UniqueId,
-              event.Recurrence
+              event.Recurrence,
+              event.ICalUid,
+              event.DeletedOccurrences,
+              event.ModifiedOccurrences
             );
+            console.log(dbRecurrencePattern);
             exchangeEvents.set(event.ICalUid, event);
 
             promiseArr.push(
@@ -398,10 +456,15 @@ export const asyncGetExchangeRecurrMasterEvents = async (exch) => {
             .filter((dbRecurrencePattern) => dbRecurrencePattern !== null)
             .filter((dbRecurrencePattern) => dbRecurrencePattern.iCalUid === eventId);
 
+          console.log(prevDbObj, event, eventId, existInDb);
+
           if (prevDbObj.length > 0) {
             const recurrencePattern = parseEwsRecurringPatterns(
               event.Id.UniqueId,
-              event.Recurrence
+              event.Recurrence,
+              event.ICalUid,
+              event.DeletedOccurrences,
+              event.ModifiedOccurrences
             );
 
             const query = db.recurrencepatterns
@@ -428,9 +491,11 @@ export const asyncGetExchangeRecurrMasterEvents = async (exch) => {
           } else {
             const recurrencePattern = parseEwsRecurringPatterns(
               event.Id.UniqueId,
-              event.Recurrence
+              event.Recurrence,
+              event.ICalUid,
+              event.DeletedOccurrences,
+              event.ModifiedOccurrences
             );
-
             results.push(db.recurrencepatterns.upsert(recurrencePattern));
           }
         });
@@ -438,6 +503,7 @@ export const asyncGetExchangeRecurrMasterEvents = async (exch) => {
   } catch (error) {
     console.log(error);
   }
+
   await Promise.all(results);
   const dbRecurrPatterns = await db.recurrencepatterns.find().exec();
   console.log(dbRecurrPatterns, exchangeEvents);
@@ -462,4 +528,37 @@ const parseEwsFreq = (ewsAppointmentPattern) => {
     default:
       break;
   }
+};
+
+export const createEwsRecurrenceObj = (firstOption, secondOption, recurrInterval, ewsRecurr) => {
+  let recurrObj;
+  switch (firstOption) {
+    case 0:
+      recurrObj = new Recurrence.DailyPattern();
+      break;
+    case 1:
+      recurrObj = new Recurrence.WeeklyPattern();
+
+      const DayOfWeekArr = [];
+      for (let i = 0; i < secondOption[1].length; i += 1) {
+        if (secondOption[1][i] === 1) {
+          recurrObj.DaysOfTheWeek.Add(i);
+        }
+      }
+      break;
+    case 2:
+      recurrObj = new Recurrence.MonthlyPattern();
+      break;
+    case 3:
+      recurrObj = new Recurrence.YearlyPattern();
+      break;
+    default:
+      console.log('What, how.');
+      return -1;
+  }
+
+  recurrObj.StartDate = ewsRecurr.StartDate;
+  recurrObj.EndDate = ewsRecurr.EndDate;
+  recurrObj.Interval = recurrInterval.toString();
+  return recurrObj;
 };

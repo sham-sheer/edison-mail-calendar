@@ -155,6 +155,18 @@ export const GET_EXCHANGE_EVENTS_BEGIN = 'GET_EXCHANGE_EVENTS_BEGIN';
 export const GET_EXCHANGE_EVENTS_SUCCESS = 'GET_EXCHANGE_EVENTS_SUCCESS';
 export const GET_EXCHANGE_EVENTS_FAILURE = 'GET_EXCHANGE_EVENTS_FAILURE';
 
+export const EDIT_EXCHANGE_SINGLE_EVENT_BEGIN = 'EDIT_EXCHANGE_SINGLE_EVENT_BEGIN';
+export const EDIT_EXCHANGE_SINGLE_EVENT_SUCCESS = 'EDIT_EXCHANGE_SINGLE_EVENT_SUCCESS';
+export const EDIT_EXCHANGE_SINGLE_EVENT_FAILURE = 'EDIT_EXCHANGE_SINGLE_EVENT_FAILURE';
+
+export const EDIT_EXCHANGE_FUTURE_EVENT_BEGIN = 'EDIT_EXCHANGE_FUTURE_EVENT_BEGIN';
+export const EDIT_EXCHANGE_FUTURE_EVENT_SUCCESS = 'EDIT_EXCHANGE_FUTURE_EVENT_SUCCESS';
+export const EDIT_EXCHANGE_FUTURE_EVENT_FAILURE = 'EDIT_EXCHANGE_FUTURE_EVENT_FAILURE';
+
+export const EDIT_EXCHANGE_ALL_EVENT_BEGIN = 'EDIT_EXCHANGE_ALL_EVENT_BEGIN';
+export const EDIT_EXCHANGE_ALL_EVENT_SUCCESS = 'EDIT_EXCHANGE_ALL_EVENT_SUCCESS';
+export const EDIT_EXCHANGE_ALL_EVENT_FAILURE = 'EDIT_EXCHANGE_ALL_EVENT_FAILURE';
+
 export const beginGetExchangeEvents = (resp) => ({
   type: GET_EXCHANGE_EVENTS_BEGIN,
   payload: resp
@@ -162,6 +174,21 @@ export const beginGetExchangeEvents = (resp) => ({
 
 export const getExchangeEventsSuccess = (resp) => ({
   type: GET_EXCHANGE_EVENTS_SUCCESS,
+  payload: resp
+});
+
+export const editEwsSingleEventBegin = (resp) => ({
+  type: EDIT_EXCHANGE_SINGLE_EVENT_BEGIN,
+  payload: resp
+});
+
+export const editEwsFutureEventBegin = (resp) => ({
+  type: EDIT_EXCHANGE_FUTURE_EVENT_BEGIN,
+  payload: resp
+});
+
+export const editEwsAllEventBegin = (resp) => ({
+  type: EDIT_EXCHANGE_ALL_EVENT_BEGIN,
   payload: resp
 });
 // ---------------------- EXCHANGE ---------------------- //

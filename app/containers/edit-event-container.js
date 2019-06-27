@@ -1,6 +1,11 @@
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
-import { editEventBegin } from '../actions/events';
+import {
+  editEventBegin,
+  editEwsSingleEventBegin,
+  editEwsFutureEventBegin,
+  editEwsAllEventBegin
+} from '../actions/events';
 import { beginUpdateCalendarObject } from '../actions/caldav';
 import EditEvent from '../components/editEvent';
 
@@ -12,7 +17,11 @@ const mapStateToProps = (state) => ({
 const mapDispatchToProps = (dispatch) => ({
   editEventBegin: (id, eventObject, providerType) =>
     dispatch(editEventBegin(id, eventObject, providerType)),
-  beginUpdateCalendarObject: (event) => dispatch(beginUpdateCalendarObject(event))
+  beginUpdateCalendarObject: (event) => dispatch(beginUpdateCalendarObject(event)),
+
+  editEwsSingleEventBegin: (event) => dispatch(editEwsSingleEventBegin(event)),
+  editEwsAllEventBegin: (event) => dispatch(editEwsAllEventBegin(event)),
+  editEwsFutureEventBegin: (event) => dispatch(editEwsFutureEventBegin(event))
 });
 
 export default connect(

@@ -3,7 +3,7 @@ import { ofType } from 'redux-observable';
 import { of, from } from 'rxjs';
 import ICAL from 'ical.js';
 import moment from 'moment';
-import uniqid from 'uniqid';
+// import uniqid from 'uniqid';
 import * as CalDavActionCreators from '../actions/caldav';
 import * as CalDavDbActionCreators from '../actions/db/caldav';
 import getDb from '../db';

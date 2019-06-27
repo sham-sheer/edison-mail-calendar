@@ -2,7 +2,8 @@ import { map, mergeMap, catchError } from 'rxjs/operators';
 import { ofType } from 'redux-observable';
 import { from, forkJoin } from 'rxjs';
 import { fromPromise } from 'rxjs/internal-compatibility';
-import uniqid from 'uniqid';
+// import uniqid from 'uniqid';
+import uuidv4 from 'uuid';
 import {
   WellKnownFolderName,
   SendInvitationsMode,
@@ -22,13 +23,13 @@ import {
   retrieveStoreEvents
 } from '../../actions/db/events';
 import {
+  deleteEventSuccess,
   POST_EVENT_SUCCESS,
   GET_EVENTS_SUCCESS,
   DELETE_EVENT_BEGIN,
   DELETE_EVENT_SUCCESS,
   DELETE_RECURRENCE_SERIES_BEGIN,
   DELETE_RECURRENCE_SERIES_SUCCESS,
-  deleteEventSuccess,
   DELETE_FUTURE_RECURRENCE_SERIES_BEGIN
 } from '../../actions/events';
 import { deleteGoogleEvent, loadClient } from '../../utils/client/google';
@@ -87,7 +88,7 @@ export const beginStoreEventsEpic = (action$) =>
     map((action) => beginStoringEvents(action.payload))
   );
 
-export const deleteEventEpics = (action$) =>
+export const deleteSingleEventEpics = (action$) =>
   action$.pipe(
     ofType(DELETE_EVENT_BEGIN),
     mergeMap((action) =>
@@ -97,7 +98,7 @@ export const deleteEventEpics = (action$) =>
     )
   );
 
-export const deleteRecurrenceEventEpics = (action$) =>
+export const deleteAllRecurrenceEventEpics = (action$) =>
   action$.pipe(
     ofType(DELETE_RECURRENCE_SERIES_BEGIN),
     mergeMap((action) =>
@@ -120,34 +121,69 @@ export const deleteFutureRecurrenceEventEpics = (action$) =>
 const storeEvents = async (payload) => {
   const db = await getDb();
   const addedEvents = [];
+  const dbFindPromises = [];
   const dbUpsertPromises = [];
   const { data } = payload;
 
+  // Create a list of promises to retrieve previous event from db first if it does not exist.
   for (const dbEvent of data) {
-    // #TO-DO, we need to figure out how to handle recurrence, for now, we ignore
-    if (dbEvent.recurringEventId !== undefined && dbEvent.recurringEventId !== null) {
-      continue;
-    }
-
+    // Filter into our schema object as we need to know how to deal with it for originalId.
     const filteredEvent = Providers.filterIntoSchema(
       dbEvent,
       payload.providerType,
       payload.owner,
       false
     );
-    filteredEvent.providerType = payload.providerType;
-    // console.log(dbEvent, filteredEvent);
-    try {
+
+    // As id is the uniqid on our side, we need to find and update or delete accordingly.
+    // We use filtered object as it has casted it into our schema object type.
+    dbFindPromises.push(
+      db.events
+        .findOne()
+        .where('originalId')
+        .eq(filteredEvent.originalId)
+        .exec()
+    );
+  }
+
+  // Wait for all the promises to complete
+  const results = await Promise.all(dbFindPromises);
+
+  // Assumtion here is that dbFindPromises is going to be the list of query that is our previous data accordingly.
+  // dbFindPromises must have same length as results, as its just an array of same size.
+  // This ensure the index of data is the same with find query index.
+  for (let i = 0; i < results.length; i += 1) {
+    const filteredEvent = Providers.filterIntoSchema(
+      data[i],
+      payload.providerType,
+      payload.owner,
+      false
+    );
+
+    // Means it is a new object, we upsert coz filtered event already is new.
+    if (results[i] === null) {
       dbUpsertPromises.push(db.events.upsert(filteredEvent));
-    } catch (e) {
-      return e;
+    } else {
+      // Take back old primary ID, so we do not create another object.
+      filteredEvent.id = results[i].id;
+
+      // Push an update query instead of a upsert. Ensure ID is the same.
+      dbUpsertPromises.push(
+        db.events
+          .findOne()
+          .where('originalId')
+          .eq(filteredEvent.originalId)
+          .update({
+            $set: filteredEvent
+          })
+      );
     }
 
-    // Adding filtered event coz if I added dbEvent, it will result it non compatability with outlook objects.
+    // This is for all the events, for UI.
     addedEvents.push(filteredEvent);
   }
 
-  Promise.all(dbUpsertPromises);
+  await Promise.all(dbUpsertPromises);
   return addedEvents;
 };
 
@@ -237,7 +273,7 @@ const deleteEvent = async (id) => {
 
         // Upsert it to the pending action, let pending action automatically handle it.
         db.pendingactions.upsert({
-          uniqueId: uniqid(),
+          uniqueId: uuidv4(),
           eventId: data.get('originalId'),
           status: 'pending',
           type: 'delete'
@@ -356,7 +392,7 @@ const deleteReccurenceEvent = async (id) => {
 
         // Upsert it to the pending action, let pending action automatically handle it.
         db.pendingactions.upsert({
-          uniqueId: uniqid(),
+          uniqueId: uuidv4(),
           eventId: data.get('originalId'),
           status: 'pending',
           type: 'delete'

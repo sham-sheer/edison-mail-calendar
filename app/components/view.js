@@ -23,7 +23,6 @@ import {
 } from 'ews-javascript-api';
 
 import RRule from 'rrule';
-import uniqid from 'uniqid';
 import getDb from '../db';
 import * as ProviderTypes from '../utils/constants';
 import SignupSyncLink from './SignupSyncLink';
@@ -238,22 +237,22 @@ export default class View extends React.Component {
   deleteEvent = () => {
     const { props } = this;
     const { state } = this;
-    // props.beginDeleteEvent(state.currentEvent.id);
-    if (state.currentEvent.isRecurring) {
-      const eventObject = {
-        exdate: moment(state.currentEvent.start)
-          .utc()
-          .format()
-      };
-      props.beginUpdateCalendarObject({
-        eventObject,
-        iCalUID: state.currentEvent.iCalUID,
-        type: 'DELETE_SINGLE_RECUR'
-      });
-    } else {
-      props.beginDeleteCalendarObject(state.currentEvent.iCalUID);
-    }
-    // props.beginDeleteCalendarObjec
+    props.beginDeleteEvent(state.currentEvent.id);
+    // if (state.currentEvent.isRecurring) {
+    //   const eventObject = {
+    //     exdate: moment(state.currentEvent.start)
+    //       .utc()
+    //       .format()
+    //   };
+    //   props.beginUpdateCalendarObject({
+    //     eventObject,
+    //     iCalUID: state.currentEvent.iCalUID,
+    //     type: 'DELETE_SINGLE_RECUR'
+    //   });
+    // } else {
+    //   props.beginDeleteCalendarObject(state.currentEvent.iCalUID);
+    // }
+    // // props.beginDeleteCalendarObjec
     this.closeModal();
   };
 
