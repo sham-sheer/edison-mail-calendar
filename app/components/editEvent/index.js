@@ -94,9 +94,9 @@ export default class EditEvent extends React.Component {
   }
 
   componentDidMount() {
-    const { props } = this;
+    const { props, state } = this;
     this.retrieveEvent(props.match.params.id);
-    console.log(this.props);
+    console.log(this.props, this.state);
   }
 
   // find a way to handle all different inputs
@@ -266,7 +266,8 @@ export default class EditEvent extends React.Component {
               props,
               firstOption: state.firstSelectedOption,
               secondOption: state.selectedSecondRecurrOption,
-              recurrInterval: state.recurrInterval
+              recurrInterval: state.recurrInterval,
+              recurrPatternId: state.recurrPatternId
             };
             props.editEwsAllEventBegin(eventObject);
             break;
@@ -344,6 +345,7 @@ export default class EditEvent extends React.Component {
       .exec();
 
     const dbEventJSON = dbEvent[0].toJSON();
+    console.log(dbEventJSON);
 
     const text = recurrenceOptions.parseString(
       Math.ceil(moment(dbEventJSON.start.dateTime).date() / 7)

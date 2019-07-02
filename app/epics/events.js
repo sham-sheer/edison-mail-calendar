@@ -389,7 +389,7 @@ export const editExchangeSingleEventEpics = (action$) =>
   );
 
 const editEwsSingle = async (payload) => {
-  const debug = false;
+  const debug = true;
 
   try {
     const singleAppointment = await asyncGetSingleExchangeEvent(
@@ -414,12 +414,18 @@ const editEwsSingle = async (payload) => {
     });
 
     const db = await getDb();
+    const dbdata = await db.recurrencepatterns.find().exec();
+
+    dbdata.forEach((dbPatt) => console.log(dbPatt.toJSON()));
+
     if (singleAppointment.IsRecurring) {
       const singleApptRP = await db.recurrencepatterns
         .find()
         .where('iCalUid')
         .eq(singleAppointment.ICalUid)
         .exec();
+
+      console.log(singleApptRP);
 
       if (singleApptRP.length > 1) {
         console.log('You have two RP in database, Fix that.');
@@ -499,6 +505,7 @@ export const editExchangeAllRecurrenceEventEpics = (action$) =>
 const editEwsAllRecurrenceEvents = async (payload) => {
   const debug = true;
 
+  console.log(payload);
   try {
     const singleAppointment = await asyncGetSingleExchangeEvent(
       payload.user.email,
@@ -510,6 +517,7 @@ const editEwsAllRecurrenceEvents = async (payload) => {
     // TO-DO, ADD MORE FIELDS AGAIN
     singleAppointment.Subject = payload.title;
 
+    console.log(singleAppointment);
     const newRecurrence = createEwsRecurrenceObj(
       payload.firstOption,
       payload.secondOption,
@@ -619,6 +627,8 @@ export const editExchangeFutureRecurrenceEventEpics = (action$) =>
   );
 
 const editEwsAllFutureRecurrenceEvents = async (payload) => {
+  const debug = true;
+
   try {
     // asyncGetSingleExchangeEvent will throw error when no internet or event missing.
     // Get master recurring event
@@ -646,7 +656,9 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
       payload.originalId
     );
 
-    console.log(singleAppointment);
+    if (debug) {
+      console.log(singleAppointment);
+    }
 
     const exch = new ExchangeService();
     exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
@@ -660,15 +672,18 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
     newEvent.Recurrence = newRecurr;
     newEvent.Recurrence.StartDate = singleAppointment.End;
 
-    console.log(newEvent.Recurrence, newRecurr);
-
+    if (debug) {
+      console.log(newEvent.Recurrence, newRecurr);
+    }
     // Upload it to server via Save, then re-get the data due to server side ID population.
     await newEvent
       .Save(WellKnownFolderName.Calendar, SendInvitationsMode.SendToAllAndSaveCopy)
       .then(async () => {
         const item = await Item.Bind(exch, newEvent.Id);
 
-        console.log(item);
+        if (debug) {
+          console.log(item);
+        }
 
         // Get all expanded events, and find the new ones within the window
         const allExchangeEvents = await asyncGetAllExchangeEvents(exch);
@@ -679,17 +694,24 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
 
         // Set the recurrence master ID to link them back, for updating/deleting of series.
         expandedItems.forEach((event) => (event.RecurrenceMasterId = item.Id));
-        console.log(allExchangeEvents, expandedItems, localPrevExpandedItems);
 
         // Build a new recurrence pattern object, and parse it into the db.
         const dbRecurrencePattern = parseEwsRecurringPatterns(
           item.Id.UniqueId,
           item.Recurrence,
-          item.iCalUID,
+          item.ICalUid,
           recurrMasterAppointment.DeletedOccurrences,
           recurrMasterAppointment.ModifiedOccurrences
         );
-        console.log(dbRecurrencePattern);
+
+        if (debug) {
+          console.log(
+            allExchangeEvents,
+            expandedItems,
+            localPrevExpandedItems,
+            dbRecurrencePattern
+          );
+        }
 
         const deletingItems = [];
         const nonDeletedItems = [];
@@ -729,7 +751,51 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
             })
           )
         );
-        console.log(modifiedItems, localPrevExpandedItems, expandedItems);
+
+        if (debug) {
+          console.log(modifiedItems, localPrevExpandedItems, expandedItems);
+          console.log(nonModifiedItems, nonDeletedItems);
+          const allRP = await db.recurrencepatterns.find().exec();
+          console.log(allRP);
+        }
+
+        // Update previous recurrence pattern by removing all modified Items
+        const rpUpdate = db.recurrencepatterns
+          .findOne()
+          .where('iCalUid')
+          .eq(singleAppointment.ICalUid);
+        const previousRp = await rpUpdate.exec();
+        const array1 = modifiedItems.map((appt) =>
+          appt.Start.MomentDate.format('YYYY-MM-DDTHH:mm:ssZ')
+        );
+        const array2 = deletingItems.map((appt) =>
+          appt.Start.MomentDate.format('YYYY-MM-DDTHH:mm:ssZ')
+        );
+        if (debug) {
+          console.log(previousRp, previousRp.exDates, previousRp.recurrenceIds, array1);
+          console.log(previousRp.exDates.filter((exDate) => !array2.includes(exDate)));
+          console.log(previousRp.recurrenceIds.filter((exDate) => !array1.includes(exDate)));
+
+          const result = await rpUpdate.exec();
+          console.log(result);
+        }
+
+        await rpUpdate.update({
+          $set: {
+            recurrenceIds: previousRp.recurrenceIds.filter((exDate) => !array1.includes(exDate)),
+            exDates: previousRp.exDates.filter((exDate) => !array2.includes(exDate))
+          }
+        });
+
+        if (debug) {
+          const rpCheck = db.recurrencepatterns
+            .find()
+            .where('iCalUid')
+            .eq(singleAppointment.ICalUid);
+
+          const result = await rpCheck.exec();
+          console.log(result);
+        }
 
         async function asyncForEach(array, callback) {
           for (let index = 0; index < array.length; index += 1) {
@@ -744,8 +810,9 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
             justGotObj.Start.MomentDate.isSame(modifiedAppt.Start.MomentDate, 'day')
           )[0];
 
-          console.log('Item: ', foundItem, modifiedAppt);
-
+          if (debug) {
+            console.log('Item: ', foundItem, modifiedAppt);
+          }
           modifiedAppt.Subject = foundItem.Subject;
 
           await modifiedAppt
@@ -766,13 +833,9 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
                 .where('originalId')
                 .eq(foundItem.Id.UniqueId);
               await query.remove();
-              console.log(updatedItem);
               return updatedItem;
             });
         });
-
-        console.log(deletingItems);
-        // console.log(exceptions);
 
         // We can just add it in as it is a new event from future events.
         await db.recurrencepatterns.upsert(dbRecurrencePattern);
@@ -795,7 +858,9 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
     // Set the recurrance for the events not this and future to the end of selected
     recurrMasterAppointment.Recurrence.EndDate = singleAppointment.Start.AddDays(-1);
 
-    console.log(recurrMasterAppointment);
+    if (debug) {
+      console.log(recurrMasterAppointment);
+    }
 
     // Update recurrence object for server, and remove the future items in local db
     await recurrMasterAppointment
@@ -810,15 +875,19 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
           .eq(payload.recurringEventId)
           .exec();
 
-        console.log(removedDeletedEventsLocally);
+        if (debug) {
+          console.log(removedDeletedEventsLocally);
+        }
 
         const afterEvents = removedDeletedEventsLocally.filter(
           (event) =>
             moment(event.toJSON().start.dateTime).isAfter(singleAppointment.Start.MomentDate) ||
             moment(event.toJSON().start.dateTime).isSame(singleAppointment.Start.MomentDate)
         );
-        console.log(afterEvents);
 
+        if (debug) {
+          console.log(afterEvents);
+        }
         await Promise.all(
           afterEvents.map((event) =>
             db.events

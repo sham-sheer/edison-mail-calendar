@@ -137,7 +137,8 @@ export const asyncUpdateExchangeEvent = async (singleAppointment, user, callback
             .eq(singleAppointment.Id.UniqueId);
 
           const localDbCopy = await query.exec();
-          updatedItem.RecurrenceMasterId = localDbCopy.recurringEventId;
+          console.log(localDbCopy.recurringEventId);
+          updatedItem.RecurrenceMasterId = { UniqueId: localDbCopy.recurringEventId };
 
           const filteredItem = ProviderTypes.filterIntoSchema(
             updatedItem,
@@ -146,6 +147,8 @@ export const asyncUpdateExchangeEvent = async (singleAppointment, user, callback
             false
           );
           filteredItem.id = localDbCopy.id;
+
+          console.log(filteredItem);
 
           await query.update({
             $set: filteredItem
@@ -184,9 +187,25 @@ export const asyncUpdateRecurrExchangeSeries = async (singleAppointment, user, c
             .exec();
           console.log(localDbItems);
 
+          // This needs to be atomic, due to how fast we are hitting the database, and performance issues. Fml. :|
+          // In order to use atomic update for RxDb, it needs to be a function, and cannot use $set.
+          const changeFunction = (oldData) => {
+            oldData.summary = updatedItem.Subject;
+            return oldData;
+          };
+
+          // // TO-DO, add more values for updating.
+          // localDbItems.forEach((localRecurringItem) => {
+          //   localRecurringItem.atomicUpdate({
+          //     $set: {
+          //       summary: updatedItem.Subject
+          //     }
+          //   });
+          // });
+
           // TO-DO, add more values for updating.
           localDbItems.forEach((localRecurringItem) => {
-            localRecurringItem.atomicUpdate({
+            localRecurringItem.update({
               $set: {
                 summary: updatedItem.Subject
               }

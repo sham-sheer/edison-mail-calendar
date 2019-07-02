@@ -12,6 +12,7 @@ import {
   Recurrence
 } from 'ews-javascript-api';
 import moment from 'moment';
+import { a } from 'bowser';
 import {
   RETRIEVE_STORED_EVENTS,
   BEGIN_STORE_EVENTS,
@@ -188,6 +189,8 @@ const storeEvents = async (payload) => {
 };
 
 const deleteEvent = async (id) => {
+  const debug = false;
+
   // Get database
   const db = await getDb();
   const query = db.events
@@ -201,6 +204,7 @@ const deleteEvent = async (id) => {
     console.error('Omg, actually a collision?');
   }
   const data = datas[0];
+  console.log(data);
 
   // Find the proper user on database
   const users = await db.persons
@@ -231,6 +235,52 @@ const deleteEvent = async (id) => {
       providerType: data.providerType,
       user: Providers.filterUsersIntoSchema(user)
     };
+  }
+
+  // if it is a recurring event, I need to add it into the ExDates, which is located in our RP database.
+  if (data.isRecurring) {
+    switch (data.providerType) {
+      case Providers.GOOGLE:
+        console.log(data.providerType, ' not handling adding of exDates for recurring pattern');
+        break;
+      case Providers.OUTLOOK:
+        console.log(data.providerType, ' not handling adding of exDates for recurring pattern');
+        break;
+      case Providers.EXCHANGE:
+        const addingIntoRpQuery = db.recurrencepatterns
+          .find()
+          .where('iCalUid')
+          .eq(data.iCalUID);
+
+        if (debug) {
+          const result = await addingIntoRpQuery.exec();
+          console.log(result[0].toJSON());
+        }
+
+        addingIntoRpQuery.update({
+          $addToSet: {
+            exDates: data.start.dateTime
+          }
+        });
+
+        if (debug) {
+          const addingIntoRpQuery2 = db.recurrencepatterns
+            .find()
+            .where('iCalUid')
+            .eq(data.iCalUID);
+
+          const result2 = await addingIntoRpQuery2.exec();
+          console.log(result2[0].toJSON());
+        }
+        break;
+      default:
+        console.log(
+          'Unhandled provider: ',
+          data.providerType,
+          ' for adding of exDates for recurring pattern'
+        );
+        break;
+    }
   }
 
   // Based off which provider, we will have different delete functions.
@@ -301,6 +351,8 @@ const deleteEvent = async (id) => {
 };
 
 const deleteReccurenceEvent = async (id) => {
+  const debug = false;
+
   // Get database
   const db = await getDb();
   const query = db.events
@@ -345,6 +397,38 @@ const deleteReccurenceEvent = async (id) => {
       providerType: data.providerType,
       user: Providers.filterUsersIntoSchema(user)
     };
+  }
+
+  // As we are deleting a series, we need to delete the recurrence pattern from db to ensure our databasedoes not blow up accordingly.
+  if (data.isRecurring) {
+    switch (data.providerType) {
+      case Providers.GOOGLE:
+        console.log(data.providerType, ' not handling deleting of recurring pattern');
+        break;
+      case Providers.OUTLOOK:
+        console.log(data.providerType, ' not handling deleting of recurring pattern');
+        break;
+      case Providers.EXCHANGE:
+        if (debug) {
+          const allRP = await db.recurrencepatterns.find().exec();
+          console.log(allRP);
+        }
+
+        const removingRb = db.recurrencepatterns
+          .find()
+          .where('iCalUid')
+          .eq(data.iCalUID);
+        await removingRb.remove();
+
+        if (debug) {
+          const newRp = await db.recurrencepatterns.find().exec();
+          console.log(newRp);
+        }
+        break;
+      default:
+        console.log('Unhandled provider: ', data.providerType, ' for deleting recurring pattern');
+        break;
+    }
   }
 
   // Based off which provider, we will have different delete functions.
@@ -420,6 +504,8 @@ const deleteReccurenceEvent = async (id) => {
 };
 
 const deleteFutureReccurenceEvent = async (id) => {
+  const debug = false;
+
   // Get database
   const db = await getDb();
   const query = db.events
@@ -477,13 +563,6 @@ const deleteFutureReccurenceEvent = async (id) => {
       console.log('Outlook, To-Do delete feature');
       break;
     case Providers.EXCHANGE:
-      // const deleteDoc = db.events
-      //   .find()
-      //   .where('recurringEventId')
-      //   .eq(data.get('recurringEventId'));
-
-      // console.log(deleteDoc);
-
       try {
         // asyncGetSingleExchangeEvent will throw error when no internet or event missing.
         const recurrMasterAppointment = await asyncGetSingleExchangeEvent(
@@ -500,42 +579,114 @@ const deleteFutureReccurenceEvent = async (id) => {
           data.get('originalId')
         );
 
-        recurrMasterAppointment.Recurrence.EndDate = singleAppointment.End;
-        await asyncDeleteExchangeEvent(singleAppointment, user, () => {
-          // Lambda for future if needed.
-        });
+        console.log(recurrMasterAppointment, data);
+        if (
+          recurrMasterAppointment.Recurrence.StartDate.MomentDate.isSame(
+            moment(data.start.dateTime),
+            'day'
+          )
+        ) {
+          console.log('Deleting entire series');
 
-        await recurrMasterAppointment
-          .Update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsMode.SendToNone)
-          .then(async () => {
-            console.log('here', data.get('recurringEventId'));
-
-            const allevents = await db.events.find().exec();
-            console.log(allevents);
-
-            const removedDeletedEventsLocally = await db.events
-              .find()
-              .where('recurringEventId')
-              .eq(data.get('recurringEventId'))
-              .exec();
-            console.log(removedDeletedEventsLocally, singleAppointment.End.MomentDate);
-
-            const afterEvents = removedDeletedEventsLocally.filter((event) =>
-              moment(event.toJSON().start.dateTime).isAfter(singleAppointment.End.MomentDate)
-            );
-
-            await Promise.all(
-              afterEvents.map((event) =>
-                db.events
-                  .find()
-                  .where('originalId')
-                  .eq(event.originalId)
-                  .remove()
-              )
-            );
-            console.log('here?');
-            // removedDeletedEventsLocally.
+          await asyncDeleteExchangeEvent(recurrMasterAppointment, user, () => {
+            // Lambda for future if needed.
           });
+
+          const removingRb = db.recurrencepatterns
+            .find()
+            .where('iCalUid')
+            .eq(data.iCalUID);
+          await removingRb.remove();
+        } else {
+          if (debug) {
+            console.log('Editing end date of recurrence and re-getting');
+
+            const rpDatabase = db.recurrencepatterns
+              .find()
+              .where('iCalUid')
+              .eq(data.iCalUID);
+
+            const rpDatabaseVals = await rpDatabase.exec();
+            console.log('Before anything ', rpDatabaseVals);
+          }
+          recurrMasterAppointment.Recurrence.EndDate = singleAppointment.Start;
+          await recurrMasterAppointment
+            .Update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsMode.SendToNone)
+            .then(async () => {
+              if (debug) {
+                console.log('here', data.get('recurringEventId'));
+                const allevents = await db.events.find().exec();
+                console.log(allevents);
+              }
+
+              const removedDeletedEventsLocally = await db.events
+                .find()
+                .where('recurringEventId')
+                .eq(data.get('recurringEventId'))
+                .exec();
+              console.log(removedDeletedEventsLocally, singleAppointment.End.MomentDate);
+
+              const afterEvents = removedDeletedEventsLocally.filter((event) =>
+                moment(event.toJSON().start.dateTime).isAfter(singleAppointment.End.MomentDate)
+              );
+
+              await Promise.all(
+                afterEvents.map((event) =>
+                  db.events
+                    .find()
+                    .where('originalId')
+                    .eq(event.originalId)
+                    .remove()
+                )
+              );
+
+              const updatingDb = db.recurrencepatterns
+                .find()
+                .where('iCalUid')
+                .eq(data.iCalUID);
+
+              const updateDbVals = await updatingDb.exec();
+
+              if (debug) {
+                const checkingData = await updatingDb.exec();
+                console.log('Before ', checkingData);
+                console.log(updateDbVals[0].exDates);
+              }
+
+              // Filter ex dates down so that when we scale, ex dates does not constantly expand.
+              const newExDates = updateDbVals[0].exDates.filter(
+                (dateTimeString) =>
+                  moment(dateTimeString).isAfter(moment(updateDbVals[0].recurringTypeId), 'day') &&
+                  moment(dateTimeString).isBefore(
+                    recurrMasterAppointment.Recurrence.EndDate.MomentDate
+                  ),
+                'day'
+              );
+
+              if (debug) {
+                console.log(newExDates);
+              }
+
+              await updatingDb.update({
+                $set: {
+                  until: recurrMasterAppointment.Recurrence.EndDate.MomentDate.format(
+                    'YYYY-MM-DDTHH:mm:ssZ'
+                  ),
+                  exDates: newExDates
+                }
+              });
+
+              if (debug) {
+                const newUpdatingDb = db.recurrencepatterns
+                  .find()
+                  .where('iCalUid')
+                  .eq(data.iCalUID);
+
+                const newData = await newUpdatingDb.exec();
+                console.log('After ', newData);
+              }
+            });
+        }
       } catch (error) {
         console.log(error);
       }

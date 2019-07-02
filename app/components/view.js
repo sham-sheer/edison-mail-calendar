@@ -80,6 +80,10 @@ export default class View extends React.Component {
     props.beginPendingActions(props.providers);
 
     const db = await getDb();
+
+    const allRP = await db.recurrencepatterns.find().exec();
+    console.log(allRP);
+
     db.persons
       .find()
       .exec()
