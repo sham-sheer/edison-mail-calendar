@@ -709,7 +709,8 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
             allExchangeEvents,
             expandedItems,
             localPrevExpandedItems,
-            dbRecurrencePattern
+            dbRecurrencePattern,
+            item.ICalUid
           );
         }
 
@@ -855,49 +856,111 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
         await Promise.all(promiseArr);
       });
 
-    // Set the recurrance for the events not this and future to the end of selected
-    recurrMasterAppointment.Recurrence.EndDate = singleAppointment.Start.AddDays(-1);
+    const checkStart = singleAppointment.Start;
 
     if (debug) {
-      console.log(recurrMasterAppointment);
+      console.log(
+        recurrMasterAppointment.ICalUid,
+        recurrMasterAppointment.Recurrence.EndDate,
+        singleAppointment.Start,
+        checkStart.AddDays(-1).MomentDate
+      );
+      console.log(
+        recurrMasterAppointment.Recurrence.EndDate.MomentDate.isAfter(
+          checkStart.AddDays(-1).MomentDate
+        )
+      );
     }
 
-    // Update recurrence object for server, and remove the future items in local db
-    await recurrMasterAppointment
-      .Update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsMode.SendToNone)
-      .then(async () => {
-        const allevents = await db.events.find().exec();
-        console.log(allevents);
+    // Start is after last event, Deleting entire series.
+    if (
+      recurrMasterAppointment.Recurrence.EndDate.MomentDate.isAfter(
+        checkStart.AddDays(-1).MomentDate
+      )
+    ) {
+      console.log('Check?');
 
-        const removedDeletedEventsLocally = await db.events
-          .find()
-          .where('recurringEventId')
-          .eq(payload.recurringEventId)
-          .exec();
-
-        if (debug) {
-          console.log(removedDeletedEventsLocally);
-        }
-
-        const afterEvents = removedDeletedEventsLocally.filter(
-          (event) =>
-            moment(event.toJSON().start.dateTime).isAfter(singleAppointment.Start.MomentDate) ||
-            moment(event.toJSON().start.dateTime).isSame(singleAppointment.Start.MomentDate)
-        );
-
-        if (debug) {
-          console.log(afterEvents);
-        }
-        await Promise.all(
-          afterEvents.map((event) =>
-            db.events
-              .find()
-              .where('originalId')
-              .eq(event.originalId)
-              .remove()
-          )
-        );
+      await asyncDeleteExchangeEvent(recurrMasterAppointment, payload.user, () => {
+        console.log('Remote delete?');
       });
+
+      if (debug) {
+        const newRp = await db.recurrencepatterns.find().exec();
+        console.log(newRp);
+      }
+
+      const removingRb = db.recurrencepatterns
+        .find()
+        .where('originalId')
+        .eq(recurrMasterAppointment.Id.UniqueId);
+      await removingRb.remove();
+
+      if (debug) {
+        const newRp = await db.recurrencepatterns.find().exec();
+        console.log(newRp);
+      }
+
+      const removedDeletedEventsLocally = await db.events
+        .find()
+        .where('recurringEventId')
+        .eq(payload.recurringEventId)
+        .exec();
+
+      const allEvents = await db.events.find().exec();
+
+      console.log(removedDeletedEventsLocally, allEvents);
+
+      await Promise.all(
+        removedDeletedEventsLocally.map((event) =>
+          db.events
+            .find()
+            .where('originalId')
+            .eq(event.originalId)
+            .remove()
+        )
+      );
+      console.log('await issue');
+    } else {
+      // Set the recurrance for the events not this and future to the end of selected
+      recurrMasterAppointment.Recurrence.EndDate = singleAppointment.Start.AddDays(-1);
+
+      // Update recurrence object for server, and remove the future items in local db
+      await recurrMasterAppointment
+        .Update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsMode.SendToNone)
+        .then(async () => {
+          const allevents = await db.events.find().exec();
+          console.log(allevents);
+
+          const removedDeletedEventsLocally = await db.events
+            .find()
+            .where('recurringEventId')
+            .eq(payload.recurringEventId)
+            .exec();
+
+          if (debug) {
+            console.log(removedDeletedEventsLocally);
+          }
+
+          const afterEvents = removedDeletedEventsLocally.filter(
+            (event) =>
+              moment(event.toJSON().start.dateTime).isAfter(singleAppointment.Start.MomentDate) ||
+              moment(event.toJSON().start.dateTime).isSame(singleAppointment.Start.MomentDate)
+          );
+
+          if (debug) {
+            console.log(afterEvents);
+          }
+          await Promise.all(
+            afterEvents.map((event) =>
+              db.events
+                .find()
+                .where('originalId')
+                .eq(event.originalId)
+                .remove()
+            )
+          );
+        });
+    }
 
     payload.props.history.push('/');
     return {
@@ -1128,7 +1191,6 @@ const handlePendingActions = async (users, actions, db) => {
       }
 
       // Get a resulting action from the merge function.
-      console.log('HUH???!!!');
       const resultingAction = await handleMergeEvents(rxDbObj, serverObj, db, action.type, user);
 
       // Return object to be reduced down later on, with the proper user information.
