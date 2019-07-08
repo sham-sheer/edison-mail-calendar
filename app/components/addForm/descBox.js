@@ -1,17 +1,15 @@
 import React from 'react';
 // import M from 'materialize-css';
 
-const titleBox = ({ description }) => (
+const descBox = ({ description }) => (
   <div className="row">
-    <form className="col s12">
-      <div className="row">
-        <div className="input-field col s12">
-          <textarea id="textarea1" className="materialize-textarea" />
-          <label htmlFor="textarea1">Event Description</label>
-        </div>
-      </div>
-    </form>
+    <div className="input-field col s6">
+      <input value={description} id="first_name2" type="text" className="validate" />
+      <label className="active" htmlFor="first_name2">
+        Description
+      </label>
+    </div>
   </div>
 );
 
-export default titleBox;
+export default descBox;

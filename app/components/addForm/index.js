@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import TextField from '@material-ui/core/TextField';
 import { FormControl } from 'react-bootstrap';
 import moment from 'moment';
+import ICAL from 'ical.js';
 import DescBox from './descBox';
 import EndTime from './endTime';
 import StartTime from './startTime';
@@ -20,28 +21,32 @@ export default class AddEvent extends Component {
     // need to write validation method
     e.preventDefault();
     const { props } = this;
+    debugger;
     props.beginCreateCalendarObject({
-      summary: 'test event',
-      start: {
-        dateTime: moment(),
-        timezone: 'US/Pacific'
+      summary: 'New Event',
+      description: 'Event Description',
+      dtstart: ICAL.Time.fromDateTimeString('2019-07-30T10:00:00').toICALString(),
+      dtend: ICAL.Time.fromDateTimeString('2019-07-30T13:00:00').toICALString(),
+      rrule: {
+        freq: 'MONTHLY',
+        interval: 1,
+        count: 10
       },
-      end: {
-        dateTime: moment().add(1, 'h'),
-        timezone: 'US/Pacific'
-      }
+      attendees: ['mailto:sham@edison.tech', 'mailto:shamsheer619@gmail.com']
     });
     props.history.push('/');
   };
 
   render() {
+    const start = ICAL.Time.fromDateTimeString('2019-07-30T10:00:00').toICALString();
+    const end = ICAL.Time.fromDateTimeString('2019-07-30T13:00:00').toICALString();
     return (
       <div className="form-event-container">
         <form className="container" onSubmit={this.handleSubmit} noValidate>
-          <SummaryBox />
-          <StartTime />
-          <EndTime />
-          <DescBox />
+          <SummaryBox summary="Component Event" />
+          <StartTime start={this.start} />
+          <EndTime end={this.end} />
+          <DescBox description="Event Description" />
 
           <input type="submit" value="Submit" />
         </form>

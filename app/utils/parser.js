@@ -53,7 +53,8 @@ const parseCal = (calendars) => {
     ownerId: calendar.account.credentials.username,
     name: calendar.displayName,
     description: calendar.description,
-    timezone: calendar.timezone
+    timezone: calendar.timezone,
+    url: calendar.url
   }));
   return parsedCalendars;
 };
@@ -61,40 +62,35 @@ const parseCal = (calendars) => {
 const parseCalEvents = (calendars) => {
   const events = [];
   calendars.forEach((calendar) => {
-    events.push(
-      // parseEvents(
-      //   calendar.objects,
-      //   calendar.data.href,
-      //   calendar.account.credentials.username
-      // )
-      newParseCalendarObjects(calendar)
-    );
+    events.push(newParseCalendarObjects(calendar));
   });
-  // debugger;
-  return events;
+  const flatEvents = events.reduce((acc, val) => acc.concat(val), []);
+  const filteredEvents = flatEvents.filter((event) => event !== '');
+  const flatFilteredEvents = filteredEvents.reduce((acc, val) => acc.concat(val), []);
+  return flatFilteredEvents;
 };
 
 const newParseCalendarObjects = (calendar) => {
   const calendarObjects = calendar.objects;
-  return calendarObjects.map((calendarObject) => parseCalendarObject(calendarObject));
+  const calendarId = calendar.url;
+  return calendarObjects.map((calendarObject) => parseCalendarObject(calendarObject, calendarId));
 };
 
-const parseCalendarObject = (calendarObject) => {
+const parseCalendarObject = (calendarObject, calendarId) => {
   const { etag, url, calendarData } = calendarObject;
   let edisonEvent = {};
   if (calendarData !== undefined && calendarData !== '') {
-    edisonEvent = parseCalendarData(calendarData, etag, url);
+    edisonEvent = parseCalendarData(calendarData, etag, url, calendarId);
   } else {
     edisonEvent = '';
   }
   return edisonEvent;
 };
 
-const parseCalendarData = (calendarData, etag, url) => {
+const parseCalendarData = (calendarData, etag, url, calendarId) => {
   const results = [];
   const jCalData = ICAL.parse(calendarData);
   const comp = new ICAL.Component(jCalData);
-  // debugger;
   const modifiedEvents = comp.getAllSubcomponents('vevent');
   const masterEvent = comp.getFirstSubcomponent('vevent');
   const icalMasterEvent = new ICAL.Event(masterEvent);
@@ -108,35 +104,36 @@ const parseCalendarData = (calendarData, etag, url) => {
       // modified events from recurrence series
       for (let i = 1; i < modifiedEvents.length; i += 1) {
         results.push({
-          eventData: parseModifiedEvent(comp, etag, url, modifiedEvents[i])
+          eventData: parseModifiedEvent(comp, etag, url, modifiedEvents[i], calendarId)
         });
       }
     }
     // Recurring event
     results.push({
       recurData: { rrule, exDates, recurrenceIds, modifiedThenDeleted },
-      eventData: parseEvent(comp, true, etag, url)
+      eventData: parseEvent(comp, true, etag, url, calendarId)
     });
   } else {
     // Non-recurring event
     results.push({
-      eventData: parseEvent(comp, false, etag, url)
+      eventData: parseEvent(comp, false, etag, url, calendarId)
     });
   }
+  // debugger;
   return results;
 };
 
-const parseModifiedEvent = (comp, etag, url, modifiedEvent) => {
+const parseModifiedEvent = (comp, etag, url, modifiedEvent, calendarId) => {
   const dtstart = modifiedEvent.getFirstPropertyValue('dtstart');
   const dtend = modifiedEvent.getFirstPropertyValue('dtend');
   return {
     id: uniqid(),
     start: {
-      dateTime: new Date(dtstart).toISOString(),
+      dateTime: dtstart.toISOString(),
       timezone: 'timezone'
     },
     end: {
-      dateTime: new Date(dtend).toISOString(),
+      dateTime: dtend.toISOString(),
       timezone: 'timezone'
     },
     originalId: modifiedEvent.getFirstPropertyValue('uid'),
@@ -167,19 +164,27 @@ const parseModifiedEvent = (comp, etag, url, modifiedEvent) => {
     // isModifiedThenDeleted: mtd,
     etag,
     caldavUrl: url,
-    ICALString: comp.toString()
+    calendarId
   };
 };
 
-const parseEvent = (component, isRecurring, etag, url) => {
+const parseEvent = (component, isRecurring, etag, url, calendarId) => {
   const masterEvent = component.getFirstSubcomponent('vevent');
-  const dtstart = masterEvent.getFirstPropertyValue('dtstart').toString();
-  const dtend = masterEvent.getFirstPropertyValue('dtend').toString();
-
+  const dtstart =
+    masterEvent.getFirstPropertyValue('dtstart') == null
+      ? ''
+      : masterEvent.getFirstPropertyValue('dtstart');
+  const dtend =
+    masterEvent.getFirstPropertyValue('dtend') == null
+      ? masterEvent
+          .getFirstPropertyValue('dtstart')
+          .adjust(0, 2, 0, 0)
+          .toString()
+      : masterEvent.getFirstPropertyValue('dtend');
   const event = {
     id: uniqid(),
     start: {
-      dateTime: dtstart,
+      dateTime: dtstart.toString(),
       timezone: 'timezone'
     },
     end: {
@@ -208,13 +213,12 @@ const parseEvent = (component, isRecurring, etag, url) => {
       timezone: 'timezone'
     },
     attendee: getAttendees(masterEvent),
-    // calendarId,
     providerType: 'caldav',
     isRecurring,
     // isModifiedThenDeleted: mtd,
     etag,
     caldavUrl: url,
-    ICALString: component.toString()
+    calendarId
   };
   return event;
 };
@@ -284,24 +288,27 @@ const expandRecurEvents = async (results) => {
   const db = await getDb();
   const nonMTDresults = results.filter((result) => !result.isModifiedThenDeleted);
   const recurringEvents = nonMTDresults.filter((nonMTDresult) => nonMTDresult.isRecurring);
-  let merged = nonMTDresults;
   let finalResults = [];
   if (recurringEvents.length === 0) {
     finalResults = nonMTDresults;
   } else {
-    finalResults = recurringEvents.map(async (recurMasterEvent) => {
+    finalResults = expandSeries(recurringEvents, db);
+  }
+  return finalResults;
+};
+
+const expandSeries = async (recurringEvents, db) => {
+  const resolved = await Promise.all(
+    recurringEvents.map(async (recurMasterEvent) => {
       const recurPatternRecurId = await db.recurrencepatterns
         .find()
         .where('originalId')
-        .eq(recurMasterEvent.originalId)
+        .eq(recurMasterEvent.iCalUID)
         .exec();
-      const recurTemp = parseRecurrence(recurPatternRecurId[0].toJSON(), recurMasterEvent);
-      merged = [...merged, ...recurTemp];
-      const final = merged.reduce((acc, val) => acc.concat(val), []);
-      return final;
-    });
-  }
-  return finalResults;
+      return parseRecurrence(recurPatternRecurId[0].toJSON(), recurMasterEvent);
+    })
+  );
+  return resolved.reduce((acc, val) => acc.concat(val), []);
 };
 
 const parseRecurrence = (pattern, recurMasterEvent) => {
@@ -330,23 +337,26 @@ const parseRecurrence = (pattern, recurMasterEvent) => {
       attendees: recurMasterEvent.attendee,
       originalId: recurMasterEvent.originalId,
       creator: recurMasterEvent.creator,
-      isRecurring: recurMasterEvent.isRecurring
+      isRecurring: recurMasterEvent.isRecurring,
+      providerType: recurMasterEvent.providerType,
+      calendarId: recurMasterEvent.calendarId
     });
   });
   return recurEvents;
 };
 
 const buildRuleSet = (pattern, master) => {
+  debugger;
   const rruleSet = new RRuleSet();
   const ruleObject = buildRuleObject(pattern, master);
   rruleSet.rrule(new RRule(ruleObject));
   const { exDates } = pattern;
-  exDates.forEach((exdate) => rruleSet.exdate(new Date(exdate)));
+  if (exDates !== undefined) exDates.forEach((exdate) => rruleSet.exdate(new Date(exdate)));
   const { recurrenceIds } = pattern;
-  recurrenceIds.forEach((recurDate) => rruleSet.exdate(new Date(recurDate)));
-  const modifiedThenDeletedDates = getModifiedThenDeletedDates(exDates, recurrenceIds);
+  if (recurrenceIds !== undefined)
+    recurrenceIds.forEach((recurDate) => rruleSet.exdate(new Date(recurDate)));
+  // const modifiedThenDeletedDates = getModifiedThenDeletedDates(exDates, recurrenceIds);
   /* To remove start date duplicate */
-  rruleSet.exdate(new Date(master.start.dateTime));
   return rruleSet;
 };
 

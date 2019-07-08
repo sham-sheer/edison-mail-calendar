@@ -93,7 +93,29 @@ export default class EditEvent extends React.Component {
   }
 
   componentDidMount() {
-    const { props } = this;
+    const { props, state } = this;
+    // debugger;
+    const eventObject = {
+      id: props.updateEventObject.id,
+      summary: 'Update New Event',
+      description: props.updateEventObject.description,
+      start: moment(props.updateEventObject.start).format('YYYY-MM-DDTHH:mm:ss'),
+      end: moment(props.updateEventObject.end).format('YYYY-MM-DDTHH:mm:ss'),
+      originalId: props.updateEventObject.originalId,
+      location: '',
+      isRecurring: true,
+      calendarId: props.updateEventObject.calendarId
+    };
+    const options = {
+      type: 'UPDATE_FUTURE_RECUR',
+      isChangeRecur: true,
+      rrule: {
+        freq: 'DAILY',
+        interval: 1
+      }
+    };
+    props.beginUpdateCalendarObject(eventObject, options);
+    props.history.push(`/`);
     this.retrieveEvent(props.match.params.id);
     console.log(this.props);
   }
@@ -199,7 +221,6 @@ export default class EditEvent extends React.Component {
     console.log(e.target.name, state);
 
     console.log(this.createDbRecurrenceObj());
-
     switch (e.target.name) {
       case 'updateOne':
         switch (state.providerType) {
@@ -530,23 +551,7 @@ export default class EditEvent extends React.Component {
         }
         break;
       case CALDAV:
-        debugger;
-        const eventObject = {
-          id: props.updateEventObject.id,
-          summary: state.title,
-          description: props.updateEventObject.description,
-          start: moment(props.updateEventObject.start).format(),
-          end: moment(props.updateEventObject.end).format(),
-          iCalUID: props.updateEventObject.iCalUID,
-          location: ''
-        };
-        debugger;
-        props.beginUpdateCalendarObject({
-          eventObject,
-          iCalUID: state.iCalUID,
-          type: 'UPDATE_SINGLE_RECUR'
-        });
-        props.history.push(`/`);
+        // debugger;
         break;
       default:
         break;

@@ -3,7 +3,7 @@ import { withRouter } from 'react-router-dom';
 import { withStyles } from '@material-ui/core/styles';
 import { postEventBegin } from '../actions/events';
 import { beginCreateCalendarObject } from '../actions/caldav';
-import AddEvent from '../components/addEvent';
+import AddEvent from '../components/addForm';
 
 const styles = (theme) => ({
   container: {

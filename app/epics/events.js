@@ -388,12 +388,12 @@ export const createCaldavAccountEpics = (action$) =>
     map(() => {
       const xhrObject = new dav.transport.Basic(
         new dav.Credentials({
-          username: Credentials.ICLOUD_USERNAME,
-          password: Credentials.ICLOUD_PASSWORD
+          username: Credentials.FASTMAIL_USERNAME,
+          password: Credentials.FASTMAIL_PASSWORD
         })
       );
       return CalDavActionCreators.beginCreateAccount({
-        server: ServerUrls.ICLOUD,
+        server: ServerUrls.FASTMAIL,
         xhr: xhrObject,
         loadObjects: true
       });

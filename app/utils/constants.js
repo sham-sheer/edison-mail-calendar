@@ -233,7 +233,7 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
             defaultValue: '',
             type: 'neededFunc',
             func() {
-              // debugger;
+              debugger;
               return dbEvent.LastModifiedTime.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ');
             }
           }
@@ -298,7 +298,7 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
               objMightHaveNothing[key].defaultValue
             );
           } else if (objMightHaveNothing[key].type === 'neededFunc') {
-            // debugger;
+            debugger;
             exchangeTryCatchCannotBeNullFunc(
               schemaCastedDbObject,
               key,
@@ -421,7 +421,7 @@ const exchangeTryCatchCannotBeNull = (
     object[objectType] = appointment[appointmentType];
   } catch (e) {
     // console.log(e, appointment, appointmentType);
-    // debugger;
+    debugger;
     object[objectType] = defaultValue;
     object.incomplete = true;
   }
@@ -440,7 +440,7 @@ const exchangeTryCatchCannotBeNullFunc = (
     object[objectType] = value;
   } catch (e) {
     // console.log("LETS GOOOOO!!", e, appointment, appointmentType);
-    // debugger;
+    debugger;
     object[objectType] = defaultValue;
     object.incomplete = true;
   }

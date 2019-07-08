@@ -17,9 +17,12 @@ export const retrieveCaldavEventsEpic = (action$) =>
     ofType(BEGIN_RETRIEVE_CALDAV_EVENTS),
     switchMap(() =>
       from(retrieveEvents()).pipe(
-        switchMap((nonRecurEvents) =>
-          from(retrieveRecurEvents(nonRecurEvents)).pipe(
-            map((allEvents) => updateStoredEvents(allEvents))
+        switchMap((allEvents) =>
+          from(retrieveRecurEvents(allEvents)).pipe(
+            map((recurEvents) =>
+              // debugger;
+              updateStoredEvents(recurEvents)
+            )
           )
         )
       )
@@ -28,7 +31,7 @@ export const retrieveCaldavEventsEpic = (action$) =>
 
 const retrieveRecurEvents = async (events) => {
   const recurEvents = await PARSER.expandRecurEvents(events);
-  return Promise.all(recurEvents);
+  return recurEvents;
 };
 
 const retrieveEvents = async () => {
@@ -48,7 +51,8 @@ const retrieveEvents = async () => {
     isRecurring: event.isRecurring,
     isModifiedThenDeleted: event.isModifiedThenDeleted,
     hide: event.hide,
-    providerType: event.providerType
+    providerType: event.providerType,
+    calendarId: event.calendarId
   }));
 };
 
@@ -87,9 +91,8 @@ const storeCaldav = async (payload) => {
       promises.push(db.recurrencepatterns.upsert(recurrenceEvent));
     });
     console.log(promises);
-    const valueArr = await Promise.all(promises);
-    debugger;
-    return valueArr;
+    const results = await Promise.all(promises);
+    return results;
   } catch (e) {
     throw e;
   }
