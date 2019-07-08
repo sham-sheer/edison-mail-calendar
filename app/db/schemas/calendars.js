@@ -22,6 +22,9 @@ export default {
     },
     timezone: {
       type: 'string'
+    },
+    url: {
+      type: 'string'
     }
   },
   required: ['calendarId']

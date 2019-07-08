@@ -23,11 +23,14 @@ import {
 } from 'ews-javascript-api';
 
 import RRule from 'rrule';
+import uniqid from 'uniqid';
+import ICAL from 'ical.js';
 import getDb from '../db';
 import * as ProviderTypes from '../utils/constants';
 import SignupSyncLink from './SignupSyncLink';
 import { asyncGetRecurrAndSingleExchangeEvents } from '../utils/client/exchange';
 
+const dav = require('dav');
 // import { FASTMAIL_USERNAME, FASTMAIL_PASSWORD } from '../utils/Credentials';
 // const dav = require('dav');
 
@@ -178,6 +181,18 @@ export default class View extends React.Component {
 
   handleSelectDate = ({ start, end }) => {
     const { props } = this;
+    // props.beginCreateCalendarObject({
+    //   summary: 'Component Event',
+    //   description: 'Event Description',
+    //   dtstart: ICAL.Time.fromDateTimeString('2019-07-30T10:00:00').toICALString(),
+    //   dtend: ICAL.Time.fromDateTimeString('2019-07-30T13:00:00').toICALString(),
+    //   rrule: {
+    //     freq: 'DAILY',
+    //     interval: 1,
+    //     count: 10
+    //   },
+    //   attendees: ['mailto:sham@edison.tech', 'mailto:shamsheer619@gmail.com']
+    // });
     props.history.push(`/${start}/${end}`);
   };
 
@@ -188,7 +203,7 @@ export default class View extends React.Component {
     props.editEventsBeginCaldav(state.currentEvent);
     props.history.push(`/${state.currentEvent.id}`);
 
-    // debugger;
+    debugger;
     // props.history.push(`/${state.currentEvent.originalId}`);
     // const payload = {
     //   id: state.currentEvent.originalId
@@ -237,6 +252,8 @@ export default class View extends React.Component {
       isShowEvent: false
     });
   };
+
+  addEvent = () => {};
 
   deleteEvent = () => {
     const { props } = this;

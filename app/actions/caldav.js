@@ -59,9 +59,12 @@ export const failCreateCalendarObject = (error) => ({
   error
 });
 
-export const beginUpdateCalendarObject = (payload) => ({
+export const beginUpdateCalendarObject = (eventObject, options) => ({
   type: BEGIN_UPDATE_CALENDAR_OBJECT,
-  payload
+  payload: {
+    eventObject,
+    options
+  }
 });
 export const successUpdateCalendarObject = (payload) => ({
   type: SUCCESS_UPDATE_CALENDAR_OBJECT,

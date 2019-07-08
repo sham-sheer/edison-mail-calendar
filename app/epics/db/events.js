@@ -554,6 +554,7 @@ const deleteFutureReccurenceEvent = async (id) => {
 
   // Based off which provider, we will have different delete functions.
   switch (data.providerType) {
+    case Providers.CALDAV:
     case Providers.GOOGLE:
       await loadClient();
       const responseFromAPI = await deleteGoogleEvent(data.get('originalId'));

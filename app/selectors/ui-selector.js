@@ -16,7 +16,9 @@ const getFilteredEvents = createSelector(
       start: new Date(moment(eachEvent.start.dateTime).format()),
       originalId: eachEvent.originalId,
       iCalUID: eachEvent.iCalUID,
-      isRecurring: eachEvent.isRecurring
+      isRecurring: eachEvent.isRecurring,
+      providerType: eachEvent.providerType,
+      calendarId: eachEvent.calendarId
     }));
     return formatedEvents;
   }

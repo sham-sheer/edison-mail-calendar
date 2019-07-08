@@ -96,7 +96,7 @@ export default class EditEvent extends React.Component {
   componentDidMount() {
     const { props, state } = this;
     this.retrieveEvent(props.match.params.id);
-    console.log(this.props, this.state);
+    // console.log(this.props, this.state);
   }
 
   // find a way to handle all different inputs
@@ -279,23 +279,7 @@ export default class EditEvent extends React.Component {
         }
         break;
       case CALDAV:
-        debugger;
-        const eventObject = {
-          id: props.updateEventObject.id,
-          summary: state.title,
-          description: props.updateEventObject.description,
-          start: moment(props.updateEventObject.start).format(),
-          end: moment(props.updateEventObject.end).format(),
-          iCalUID: props.updateEventObject.iCalUID,
-          location: ''
-        };
-        debugger;
-        props.beginUpdateCalendarObject({
-          eventObject,
-          iCalUID: state.iCalUID,
-          type: 'UPDATE_SINGLE_RECUR'
-        });
-        props.history.push(`/`);
+        // debugger;
         break;
       default:
         break;

@@ -17,7 +17,8 @@ const mapStateToProps = (state) => ({
 const mapDispatchToProps = (dispatch) => ({
   editEventBegin: (id, eventObject, providerType) =>
     dispatch(editEventBegin(id, eventObject, providerType)),
-  beginUpdateCalendarObject: (event) => dispatch(beginUpdateCalendarObject(event)),
+  beginUpdateCalendarObject: (event, options) =>
+    dispatch(beginUpdateCalendarObject(event, options)),
 
   editEwsSingleEventBegin: (event) => dispatch(editEwsSingleEventBegin(event)),
   editEwsAllEventBegin: (event) => dispatch(editEwsAllEventBegin(event)),

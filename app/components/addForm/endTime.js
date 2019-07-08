@@ -1,11 +1,15 @@
 import React from 'react';
 // import M from 'materialize-css';
 
-const titleBox = ({ end }) => (
-  <div>
-    <input type="text" className="datepicker" defaultDate={end} />
-    <input type="text" className="timepicker" defaultTime="now" />
+const endBox = ({ end }) => (
+  <div className="row">
+    <div className="input-field col s6">
+      <input value={end} id="first_name2" type="text" className="validate" />
+      <label className="active" htmlFor="first_name2">
+        End time
+      </label>
+    </div>
   </div>
 );
 
-export default titleBox;
+export default endBox;
