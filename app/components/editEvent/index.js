@@ -101,7 +101,10 @@ export default class EditEvent extends React.Component {
 
   // find a way to handle all different inputs
   handleChange = (event) => {
+    // console.log(event.name);
     if (event.target !== undefined) {
+      // console.log(event.target.name);
+      // console.log(event.target.value);
       this.setState({
         [event.target.name]: event.target.value
       });
@@ -116,6 +119,7 @@ export default class EditEvent extends React.Component {
       //   });
       // }
     } else {
+      // console.log(event.name);
       this.setState({
         [event.name]: event.value
       });
@@ -159,47 +163,16 @@ export default class EditEvent extends React.Component {
     };
   };
 
-  // createEwsRecurrenceObj = (ewsRecurr) => {
-  //   let recurrObj;
-  //   const { state } = this;
-  //   switch (state.firstSelectedOption) {
-  //     case 0:
-  //       recurrObj = new Recurrence.DailyPattern();
-  //       break;
-  //     case 1:
-  //       recurrObj = new Recurrence.WeeklyPattern();
-
-  //       const DayOfWeekArr = [];
-  //       for (let i = 0; i < state.selectedSecondRecurrOption[1].length; i += 1) {
-  //         if (state.selectedSecondRecurrOption[1][i] === 1) {
-  //           recurrObj.DaysOfTheWeek.Add(i);
-  //         }
-  //       }
-  //       break;
-  //     case 2:
-  //       recurrObj = new Recurrence.MonthlyPattern();
-  //       break;
-  //     case 3:
-  //       recurrObj = new Recurrence.YearlyPattern();
-  //       break;
-  //     default:
-  //       console.log('What, how.');
-  //       return -1;
-  //   }
-
-  //   recurrObj.StartDate = ewsRecurr.StartDate;
-  //   recurrObj.EndDate = ewsRecurr.EndDate;
-  //   recurrObj.Interval = state.recurrInterval.toString();
-  //   return recurrObj;
-  // };
-
   handleSubmit = async (e) => {
     e.preventDefault();
     const { props, state } = this;
 
     console.log(e.target.name, state);
-
     console.log(this.createDbRecurrenceObj());
+
+    if (e.target.name === 'return') {
+      props.history.push('/');
+    }
 
     switch (e.target.name) {
       case 'updateOne':
@@ -267,7 +240,11 @@ export default class EditEvent extends React.Component {
               firstOption: state.firstSelectedOption,
               secondOption: state.selectedSecondRecurrOption,
               recurrInterval: state.recurrInterval,
-              recurrPatternId: state.recurrPatternId
+              recurrPatternId: state.recurrPatternId,
+              untilType: state.thirdRecurrOptions,
+              untilDate: state.recurrEndDate,
+              untilAfter: state.thirdOptionAfter,
+              iCalUID: state.iCalUID
             };
             props.editEwsAllEventBegin(eventObject);
             break;
@@ -337,6 +314,7 @@ export default class EditEvent extends React.Component {
   //     In order to retrive the event, I need to make a query from the script to get the javascript ews object. However, once I have it, I can update it easily.
   // */
   retrieveEvent = async (id) => {
+    console.log(id);
     const db = await getDb();
     const dbEvent = await db.events
       .find()
@@ -360,29 +338,22 @@ export default class EditEvent extends React.Component {
         .eq(dbEventJSON.recurringEventId)
         .exec();
 
-      console.log(dbEventRecurrence.toJSON());
+      console.log(dbEventRecurrence.toJSON(), dbEventRecurrence.numberOfRepeats);
 
-      const thirdRecurrChoice = recurrenceOptions.parseThirdRecurrOption(dbEventRecurrence.until);
+      const thirdRecurrChoice = recurrenceOptions.parseThirdRecurrOption(
+        dbEventRecurrence.until,
+        dbEventRecurrence.numberOfRepeats
+      );
 
       const firstSelected = recurrenceOptions.parseFreq(dbEventRecurrence.freq);
       const secondSelected = recurrenceOptions.parseFreqNumber(firstSelected);
 
       const selectedSecondRecurrOptions = [];
       if (firstSelected === 1) {
-        // selectedSecondRecurrOptions = [0, 0, 0, 0, 0, 0, 0];
-
-        // console.log('Before', selectedSecondRecurrOptions);
-        // dbEventRecurrence.weeklyPattern.forEach(
-        //   (index) => (selectedSecondRecurrOptions[index] = 1)
-        // );
-
-        // console.log('After', selectedSecondRecurrOptions);
         this.setState({
           selectedSecondRecurrOption: [0, dbEventRecurrence.weeklyPattern, 0, 0]
         });
       }
-
-      console.log(selectedSecondRecurrOptions, secondRecurrOptions[0]);
 
       this.setState({
         isRecurring: true,
@@ -394,7 +365,8 @@ export default class EditEvent extends React.Component {
         recurrStartDate: moment(dbEventRecurrence.recurringTypeId).format('YYYY-MM-DDTHH:mm:ssZ'),
         recurrEndDate: moment(dbEventRecurrence.until).format('YYYY-MM-DDTHH:mm:ssZ'),
         recurringMasterId: dbEventRecurrence.originalId,
-        recurrPatternId: dbEventRecurrence.id
+        recurrPatternId: dbEventRecurrence.id,
+        thirdOptionAfter: dbEventRecurrence.numberOfRepeats
       });
     }
 
@@ -648,6 +620,10 @@ export default class EditEvent extends React.Component {
     const endMenu = [];
     endMenu.push(
       <input type="button" onClick={this.handleSubmit} name="updateOne" value="Update this event" />
+    );
+
+    endMenu.push(
+      <input type="button" onClick={this.handleSubmit} name="return" value="Back to Calendar" />
     );
 
     if (state.isRecurring) {

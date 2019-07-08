@@ -522,8 +522,14 @@ const editEwsAllRecurrenceEvents = async (payload) => {
       payload.firstOption,
       payload.secondOption,
       payload.recurrInterval,
-      singleAppointment.Recurrence
+      singleAppointment.Recurrence,
+      payload.untilType,
+      payload.untilDate,
+      payload.untilAfter
     );
+
+    console.log(newRecurrence);
+    debugger;
 
     const exch = new ExchangeService();
     exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
@@ -547,19 +553,24 @@ const editEwsAllRecurrenceEvents = async (payload) => {
       const dbRecurrencePattern = parseEwsRecurringPatterns(
         updatedRecurrMasterAppointment.Id.UniqueId,
         updatedRecurrMasterAppointment.Recurrence,
-        updatedRecurrMasterAppointment.iCalUID,
+        updatedRecurrMasterAppointment.ICalUid,
         updatedRecurrMasterAppointment.DeletedOccurrences,
         updatedRecurrMasterAppointment.ModifiedOccurrences
       );
 
       const query = db.recurrencepatterns
         .find()
-        .where('id')
-        .eq(payload.recurrPatternId);
+        .where('iCalUid')
+        .eq(payload.iCalUID);
 
       if (debug) {
         const test = await query.exec();
-        console.log(test, payload.recurrPatternId);
+        console.log(
+          test,
+          payload.recurrPatternId,
+          dbRecurrencePattern,
+          updatedRecurrMasterAppointment
+        );
       }
 
       await query.update({
@@ -577,8 +588,28 @@ const editEwsAllRecurrenceEvents = async (payload) => {
         }
       });
 
-      // We can just add it in as it is a new event from future events.
-      await db.recurrencepatterns.upsert(dbRecurrencePattern);
+      // const rpQuery = db.recurrencepatterns
+      //   .find()
+      //   .where('iCalUid')
+      //   .eq(payload.iCalUID);
+
+      // await rpQuery.update({
+      //   $set: {
+      //     freq: dbRecurrencePattern.freq,
+      //     interval: dbRecurrencePattern.interval,
+      //     until: dbRecurrencePattern.until,
+      //     exDates: dbRecurrencePattern.exDates,
+      //     recurrenceIds: dbRecurrencePattern.recurrenceIds,
+      //     recurringTypeId: dbRecurrencePattern.recurringTypeId,
+      //     modifiedThenDeleted: dbRecurrencePattern.modifiedThenDeleted,
+      //     weeklyPattern: dbRecurrencePattern.weeklyPattern,
+      //     numberOfRepeats: dbRecurrencePattern.numberOfRepeats,
+      //     iCalUid: dbRecurrencePattern.iCalUid
+      //   }
+      // });
+
+      // // We can just add it in as it is a new event from future events.
+      // await db.recurrencepatterns.upsert(dbRecurrencePattern);
 
       await db.events
         .find()
@@ -586,6 +617,13 @@ const editEwsAllRecurrenceEvents = async (payload) => {
         .eq(singleAppointment.ICalUid)
         .remove();
       if (debug) {
+        const data = await db.events
+          .find()
+          .where('iCalUID')
+          .eq(singleAppointment.ICalUid)
+          .exec();
+
+        console.log(data);
         console.log(
           allEwsEvents.filter((ewsEvent) => ewsEvent.ICalUid === singleAppointment.ICalUid)
         );
@@ -628,7 +666,7 @@ export const editExchangeFutureRecurrenceEventEpics = (action$) =>
 
 const editEwsAllFutureRecurrenceEvents = async (payload) => {
   const debug = true;
-
+  console.log(payload);
   try {
     // asyncGetSingleExchangeEvent will throw error when no internet or event missing.
     // Get master recurring event
@@ -878,8 +916,6 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
         checkStart.AddDays(-1).MomentDate
       )
     ) {
-      console.log('Check?');
-
       await asyncDeleteExchangeEvent(recurrMasterAppointment, payload.user, () => {
         console.log('Remote delete?');
       });
@@ -906,9 +942,10 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
         .eq(payload.recurringEventId)
         .exec();
 
-      const allEvents = await db.events.find().exec();
-
-      console.log(removedDeletedEventsLocally, allEvents);
+      if (debug) {
+        const allEvents = await db.events.find().exec();
+        console.log(removedDeletedEventsLocally, allEvents);
+      }
 
       await Promise.all(
         removedDeletedEventsLocally.map((event) =>
@@ -919,7 +956,6 @@ const editEwsAllFutureRecurrenceEvents = async (payload) => {
             .remove()
         )
       );
-      console.log('await issue');
     } else {
       // Set the recurrance for the events not this and future to the end of selected
       recurrMasterAppointment.Recurrence.EndDate = singleAppointment.Start.AddDays(-1);

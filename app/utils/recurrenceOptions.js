@@ -98,10 +98,13 @@ export const parseFreqNumber = (number) => {
 };
 
 // For converting third choice of recurrence to label for UI.
-export const parseThirdRecurrOption = (until) => {
+export const parseThirdRecurrOption = (until, repeat) => {
   switch (until) {
     case '':
-      return 'n';
+      if (repeat === null) {
+        return 'n';
+      }
+      return 'a';
     default:
       return 'o';
   }

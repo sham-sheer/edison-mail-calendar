@@ -263,7 +263,7 @@ export const asyncGetRecurrAndSingleExchangeEvents = async (exch) => {
   );
 
   const recurrMasterEvents = await asyncGetExchangeRecurrMasterEvents(exch);
-  // console.log(mapOfRecurrEvents, recurrMasterEvents);
+  console.log(mapOfRecurrEvents, recurrMasterEvents);
   for (const [key, value] of mapOfRecurrEvents) {
     const recurrMasterId = recurrMasterEvents.get(key).Id;
     value.forEach((event) => (event.RecurrenceMasterId = recurrMasterId));
@@ -518,7 +518,15 @@ const parseEwsFreq = (ewsAppointmentPattern) => {
   }
 };
 
-export const createEwsRecurrenceObj = (firstOption, secondOption, recurrInterval, ewsRecurr) => {
+export const createEwsRecurrenceObj = (
+  firstOption,
+  secondOption,
+  recurrInterval,
+  ewsRecurr,
+  untilType,
+  untilDate,
+  untilAfter
+) => {
   let recurrObj;
   switch (firstOption) {
     case 0:
@@ -546,7 +554,26 @@ export const createEwsRecurrenceObj = (firstOption, secondOption, recurrInterval
   }
 
   recurrObj.StartDate = ewsRecurr.StartDate;
-  recurrObj.EndDate = ewsRecurr.EndDate;
+
+  switch (untilType) {
+    case 'o':
+      // Filter to just Y/M/D, don't need any time.
+      recurrObj.EndDate = new DateTime(moment(untilDate));
+      break;
+    case 'a':
+      // Ensure it is a number.
+      recurrObj.NumberOfOccurrences = parseInt(untilAfter, 10);
+      break;
+    case 'n':
+      // No end, rip. Constant expansion here we go.
+      recurrObj.HasEnd = false;
+      break;
+    default:
+      console.log('What, how.');
+      return -1;
+  }
+
+  // recurrObj.EndDate = ewsRecurr.EndDate;
   recurrObj.Interval = recurrInterval.toString();
   return recurrObj;
 };

@@ -82,7 +82,7 @@ export default class View extends React.Component {
     const db = await getDb();
 
     const allRP = await db.recurrencepatterns.find().exec();
-    console.log(allRP);
+    console.log(allRP.map((rp) => rp.toJSON()));
 
     db.persons
       .find()
