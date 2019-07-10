@@ -19,9 +19,46 @@ export default {
       type: 'string'
     },
     interval: {
-      type: 'number'
+      type: 'number',
+      default: 1
     },
     until: {
+      type: 'string'
+    },
+    count: {
+      type: 'number'
+    },
+    wkst: {
+      type: 'string'
+    },
+    bysetpos: {
+      type: 'string'
+    },
+    bymonth: {
+      type: 'string'
+    },
+    bymonthday: {
+      type: 'string'
+    },
+    byyearday: {
+      type: 'string'
+    },
+    byweekno: {
+      type: 'string'
+    },
+    byweekday: {
+      type: 'array'
+    },
+    byhour: {
+      type: 'string'
+    },
+    byminute: {
+      type: 'string'
+    },
+    bysecond: {
+      type: 'string'
+    },
+    byeaster: {
       type: 'string'
     },
     exDates: {
@@ -40,8 +77,8 @@ export default {
       type: 'number',
       default: 0
     },
-    iCalUid: {
-      type: 'string'
+    isCount: {
+      type: 'boolean'
     }
   }
 };

@@ -16,11 +16,23 @@ const parseRecurrenceEvents = (calEvents) => {
         id: uniqid(),
         originalId: calEvent.eventData.originalId,
         freq: calEvent.recurData.rrule.freq,
-        interval: calEvent.recurData.rruleinterval,
+        interval: calEvent.recurData.rrule.interval,
         until: calEvent.recurData.rrule.until,
         exDates: calEvent.recurData.exDates,
         recurrenceIds: calEvent.recurData.recurrenceIds,
-        modifiedThenDeleted: calEvent.recurData.modifiedThenDeleted
+        modifiedThenDeleted: calEvent.recurData.modifiedThenDeleted,
+        count: calEvent.recurData.rrule.count,
+        wkst: calEvent.recurData.rrule.wkst,
+        bysetpos: calEvent.recurData.rrule.bysetpos,
+        bymonth: calEvent.recurData.rrule.bymonth,
+        bymonthday: calEvent.recurData.rrule.bymonthday,
+        byyearday: calEvent.recurData.rrule.byyearday,
+        byweekno: calEvent.recurData.rrule.byweekno,
+        byweekday: calEvent.recurData.rrule.byday,
+        byhour: calEvent.recurData.rrule.byhour,
+        byminute: calEvent.recurData.rrule.byminute,
+        bysecond: calEvent.recurData.rrule.bysecond,
+        byeaster: calEvent.recurData.rrule.byeaster
       });
     }
   });
@@ -228,7 +240,11 @@ const getRuleJSON = (masterEvent, icalMasterEvent) => {
   if (icalMasterEvent.isRecurring()) {
     const rrule = masterEvent.getFirstPropertyValue('rrule');
     rruleJSON = rrule.toJSON();
-    rruleJSON = { ...rruleJSON, interval: rrule.interval };
+    if (rruleJSON.byday !== undefined) {
+      if (typeof rruleJSON.byday === 'string') {
+        rruleJSON.byday = [rruleJSON.byday];
+      }
+    }
   }
   return rruleJSON;
 };
@@ -346,7 +362,6 @@ const parseRecurrence = (pattern, recurMasterEvent) => {
 };
 
 const buildRuleSet = (pattern, master) => {
-  debugger;
   const rruleSet = new RRuleSet();
   const ruleObject = buildRuleObject(pattern, master);
   rruleSet.rrule(new RRule(ruleObject));
@@ -385,7 +400,102 @@ const buildRuleObject = (pattern, master) => {
       break;
     default:
   }
+
+  switch (pattern.wkst) {
+    case 'MO':
+      ruleObject.wkst = 0;
+      break;
+    case 'TU':
+      ruleObject.wkst = 1;
+      break;
+    case 'WE':
+      ruleObject.wkst = 2;
+      break;
+    case 'TH':
+      ruleObject.wkst = 3;
+      break;
+    case 'FR':
+      ruleObject.wkst = 4;
+      break;
+    case 'SA':
+      ruleObject.wkst = 5;
+      break;
+    case 'SU':
+      ruleObject.wkst = 6;
+      break;
+    default:
+      ruleObject.wkst = null;
+  }
+  if (pattern.byweekday) {
+    const weekdays = pattern.byweekday;
+    if (weekdays.length === 1) {
+      switch (pattern.byweekday) {
+        case 'MO':
+          ruleObject.byweekday = 0;
+          break;
+        case 'TU':
+          ruleObject.byweekday = 1;
+          break;
+        case 'WE':
+          ruleObject.byweekday = 2;
+          break;
+        case 'TH':
+          ruleObject.byweekday = 3;
+          break;
+        case 'FR':
+          ruleObject.byweekday = 4;
+          break;
+        case 'SA':
+          ruleObject.byweekday = 5;
+          break;
+        case 'SU':
+          ruleObject.byweekday = 6;
+          break;
+        default:
+          ruleObject.byweekday = null;
+      }
+    } else {
+      const byweekdays = [];
+      weekdays.forEach((weekday) => {
+        switch (weekday) {
+          case 'MO':
+            byweekdays.push(0);
+            break;
+          case 'TU':
+            byweekdays.push(1);
+            break;
+          case 'WE':
+            byweekdays.push(2);
+            break;
+          case 'TH':
+            byweekdays.push(3);
+            break;
+          case 'FR':
+            byweekdays.push(4);
+            break;
+          case 'SA':
+            byweekdays.push(5);
+            break;
+          case 'SU':
+            byweekdays.push(6);
+            break;
+          default:
+            break;
+        }
+      });
+      ruleObject.byweekday = byweekdays;
+    }
+  }
+  ruleObject.bymonth = pattern.bymonth ? pattern.bymonth : null;
+  ruleObject.bysetpos = pattern.bysetpos ? pattern.bysetpos : null;
+  ruleObject.bymonthday = pattern.bymonthday ? pattern.bymonthday : null;
+  ruleObject.byyearday = pattern.byyearday ? pattern.byyearday : null;
+  ruleObject.byhour = pattern.byhour ? pattern.byhour : null;
+  ruleObject.byminute = pattern.byminute ? pattern.byminute : null;
+  ruleObject.bysecond = pattern.bysecond ? pattern.bysecond : null;
+  ruleObject.byeaster = pattern.byeaster ? pattern.byeaster : null;
   ruleObject.until = pattern.until ? new Date(pattern.until) : TEMPORARY_RECURRENCE_END;
+  ruleObject.count = pattern.count ? pattern.count : null;
   return ruleObject;
 };
 

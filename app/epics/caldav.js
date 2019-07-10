@@ -3,7 +3,6 @@ import { ofType } from 'redux-observable';
 import { of, from } from 'rxjs';
 import ICAL from 'ical.js';
 import moment from 'moment';
-import uniqid from 'uniqid';
 import * as CalDavActionCreators from '../actions/caldav';
 import * as CalDavDbActionCreators from '../actions/db/caldav';
 import getDb from '../db';
@@ -248,7 +247,7 @@ const updateFutureRecurEvent = async (oldEvent, payload, db) => {
       until: updatedUntil
     }
   });
-  const updatedId = uniqid();
+  const updatedId = uuidv1();
   const updatedUid = uuidv1();
   const newRecurPattern = await db.recurrencepatterns.upsert({
     id: updatedId,
