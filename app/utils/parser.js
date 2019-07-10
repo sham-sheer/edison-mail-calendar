@@ -1,7 +1,8 @@
 import React from 'react';
 import ICAL from 'ical.js';
 import moment from 'moment';
-import uniqid from 'uniqid';
+// import uniqid from 'uniqid';
+import uuidv4 from 'uuid';
 import { RRule, RRuleSet, rrulestr } from 'rrule';
 import getDb from '../db';
 
@@ -13,7 +14,7 @@ const parseRecurrenceEvents = (calEvents) => {
     const { isRecurring } = calEvent.eventData;
     if (isRecurring) {
       recurringEvents.push({
-        id: uniqid(),
+        id: uuidv4(),
         originalId: calEvent.eventData.originalId,
         freq: calEvent.recurData.rrule.freq,
         interval: calEvent.recurData.rrule.interval,
@@ -47,7 +48,7 @@ const parseEventPersons = (events) => {
       // if there are attendees
       attendees.forEach((attendee) => {
         eventPersons.push({
-          eventPersonId: uniqid(),
+          eventPersonId: uuidv4(),
           // this is null when status of event is not confirmed
           eventId: calEvent.eventData.id,
           // Update: Gonna use email as the personId
@@ -139,7 +140,7 @@ const parseModifiedEvent = (comp, etag, url, modifiedEvent, calendarId) => {
   const dtstart = modifiedEvent.getFirstPropertyValue('dtstart');
   const dtend = modifiedEvent.getFirstPropertyValue('dtend');
   return {
-    id: uniqid(),
+    id: uuidv4(),
     start: {
       dateTime: dtstart.toISOString(),
       timezone: 'timezone'
@@ -194,7 +195,7 @@ const parseEvent = (component, isRecurring, etag, url, calendarId) => {
           .toString()
       : masterEvent.getFirstPropertyValue('dtend');
   const event = {
-    id: uniqid(),
+    id: uuidv4(),
     start: {
       dateTime: dtstart.toString(),
       timezone: 'timezone'
@@ -335,7 +336,7 @@ const parseRecurrence = (pattern, recurMasterEvent) => {
 
   recurDates.forEach((recurDateTime) => {
     recurEvents.push({
-      id: uniqid(),
+      id: uuidv4(),
       end: {
         dateTime: moment(recurDateTime)
           .add(duration)

@@ -1,7 +1,8 @@
 import moment from 'moment';
 import md5 from 'md5';
 import { ExtendedPropertyDefinition, StringHelper } from 'ews-javascript-api';
-import uniqid from 'uniqid';
+// import uniqid from 'uniqid';
+import uuidv4 from 'uuid';
 import db from '../db';
 
 export const OUTLOOK = 'OUTLOOK';
@@ -168,7 +169,7 @@ export const filterIntoSchema = (dbEvent, type, owner, local, id) => {
 
         Talk to shuhao tmr, and ask how you think we should deal with this case.
       */
-      schemaCastedDbObject.id = uniqid();
+      schemaCastedDbObject.id = uuidv4();
       schemaCastedDbObject.originalId = dbEvent.Id === null ? id : dbEvent.Id.UniqueId;
       schemaCastedDbObject.start = {
         dateTime: dbEvent.Start.getMomentDate().format('YYYY-MM-DDTHH:mm:ssZ')

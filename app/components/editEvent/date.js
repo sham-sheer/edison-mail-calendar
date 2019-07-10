@@ -8,6 +8,7 @@ class Date extends Component {
   handleClickDay = (day) => {
     const momentDay = moment(day).format();
     const { props } = this;
+    // console.log(props, day, momentDay);
     props.dayProps({
       name: props.name,
       value: momentDay
@@ -26,7 +27,7 @@ class Date extends Component {
           onDayChange={this.handleClickDay}
           placeholder={`${formatDate(props.startDay)}`}
           dayPickerProps={{
-            locale: 'it',
+            locale: 'en',
             localeUtils: MomentLocaleUtils
           }}
         />

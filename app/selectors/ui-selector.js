@@ -1,6 +1,5 @@
 import { createSelector } from 'reselect';
 import moment from 'moment';
-import uniqid from 'uniqid';
 
 const getEvents = (state) => state.events.calEvents;
 

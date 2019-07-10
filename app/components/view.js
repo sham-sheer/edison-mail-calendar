@@ -83,6 +83,10 @@ export default class View extends React.Component {
     props.beginPendingActions(props.providers);
 
     const db = await getDb();
+
+    const allRP = await db.recurrencepatterns.find().exec();
+    console.log(allRP.map((rp) => rp.toJSON()));
+
     db.persons
       .find()
       .exec()
@@ -254,22 +258,22 @@ export default class View extends React.Component {
   deleteEvent = () => {
     const { props } = this;
     const { state } = this;
-    // props.beginDeleteEvent(state.currentEvent.id);
-    if (state.currentEvent.isRecurring) {
-      const eventObject = {
-        exdate: moment(state.currentEvent.start)
-          .utc()
-          .format()
-      };
-      props.beginUpdateCalendarObject({
-        eventObject,
-        iCalUID: state.currentEvent.iCalUID,
-        type: 'DELETE_SINGLE_RECUR'
-      });
-    } else {
-      props.beginDeleteCalendarObject(state.currentEvent.iCalUID);
-    }
-    // props.beginDeleteCalendarObjec
+    props.beginDeleteEvent(state.currentEvent.id);
+    // if (state.currentEvent.isRecurring) {
+    //   const eventObject = {
+    //     exdate: moment(state.currentEvent.start)
+    //       .utc()
+    //       .format()
+    //   };
+    //   props.beginUpdateCalendarObject({
+    //     eventObject,
+    //     iCalUID: state.currentEvent.iCalUID,
+    //     type: 'DELETE_SINGLE_RECUR'
+    //   });
+    // } else {
+    //   props.beginDeleteCalendarObject(state.currentEvent.iCalUID);
+    // }
+    // // props.beginDeleteCalendarObjec
     this.closeModal();
   };
 

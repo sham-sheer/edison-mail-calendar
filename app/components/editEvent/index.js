@@ -18,7 +18,8 @@ import {
   DailyPattern,
   DayOfTheWeekCollection
 } from 'ews-javascript-api';
-import uniqid from 'uniqid';
+// import uniqid from 'uniqid';
+import uuidv4 from 'uuid';
 import Select from 'react-select';
 
 import Location from './location';
@@ -94,35 +95,16 @@ export default class EditEvent extends React.Component {
 
   componentDidMount() {
     const { props, state } = this;
-    // debugger;
-    const eventObject = {
-      id: props.updateEventObject.id,
-      summary: 'Update New Event',
-      description: props.updateEventObject.description,
-      start: moment(props.updateEventObject.start).format('YYYY-MM-DDTHH:mm:ss'),
-      end: moment(props.updateEventObject.end).format('YYYY-MM-DDTHH:mm:ss'),
-      originalId: props.updateEventObject.originalId,
-      location: '',
-      isRecurring: true,
-      calendarId: props.updateEventObject.calendarId
-    };
-    const options = {
-      type: 'UPDATE_FUTURE_RECUR',
-      isChangeRecur: true,
-      rrule: {
-        freq: 'DAILY',
-        interval: 1
-      }
-    };
-    props.beginUpdateCalendarObject(eventObject, options);
-    props.history.push(`/`);
     this.retrieveEvent(props.match.params.id);
-    console.log(this.props);
+    // console.log(this.props, this.state);
   }
 
   // find a way to handle all different inputs
   handleChange = (event) => {
+    // console.log(event.name);
     if (event.target !== undefined) {
+      // console.log(event.target.name);
+      // console.log(event.target.value);
       this.setState({
         [event.target.name]: event.target.value
       });
@@ -137,6 +119,7 @@ export default class EditEvent extends React.Component {
       //   });
       // }
     } else {
+      // console.log(event.name);
       this.setState({
         [event.name]: event.value
       });
@@ -165,7 +148,7 @@ export default class EditEvent extends React.Component {
   createDbRecurrenceObj = () => {
     const { state } = this;
     return {
-      id: uniqid(),
+      id: uuidv4(),
       originalId: state.recurringMasterId,
       freq: recurrenceOptions.parseFreqByNumber(state.firstSelectedOption),
       interval: parseInt(state.recurrInterval, 10),
@@ -180,47 +163,17 @@ export default class EditEvent extends React.Component {
     };
   };
 
-  createEwsRecurrenceObj = (ewsRecurr) => {
-    let recurrObj;
-    const { state } = this;
-    switch (state.firstSelectedOption) {
-      case 0:
-        recurrObj = new Recurrence.DailyPattern();
-        break;
-      case 1:
-        recurrObj = new Recurrence.WeeklyPattern();
-
-        const DayOfWeekArr = [];
-        for (let i = 0; i < state.selectedSecondRecurrOption[1].length; i += 1) {
-          if (state.selectedSecondRecurrOption[1][i] === 1) {
-            recurrObj.DaysOfTheWeek.Add(i);
-          }
-        }
-        break;
-      case 2:
-        recurrObj = new Recurrence.MonthlyPattern();
-        break;
-      case 3:
-        recurrObj = new Recurrence.YearlyPattern();
-        break;
-      default:
-        console.log('What, how.');
-        return -1;
-    }
-
-    recurrObj.StartDate = ewsRecurr.StartDate;
-    recurrObj.EndDate = ewsRecurr.EndDate;
-    recurrObj.Interval = state.recurrInterval.toString();
-    return recurrObj;
-  };
-
   handleSubmit = async (e) => {
     e.preventDefault();
     const { props, state } = this;
 
     console.log(e.target.name, state);
-
     console.log(this.createDbRecurrenceObj());
+
+    if (e.target.name === 'return') {
+      props.history.push('/');
+    }
+
     switch (e.target.name) {
       case 'updateOne':
         switch (state.providerType) {
@@ -255,53 +208,15 @@ export default class EditEvent extends React.Component {
               (object) => object.email === state.owner
             )[0]; // this validates which user the event belongs to, by email.
 
-            try {
-              const singleAppointment = await asyncGetSingleExchangeEvent(
-                user.email,
-                user.password,
-                'https://outlook.office365.com/Ews/Exchange.asmx',
-                state.id
-              );
-
-              singleAppointment.Subject = state.title;
-              singleAppointment.Location = state.place.name;
-
-              await asyncUpdateExchangeEvent(singleAppointment, user, () => {
-                props.history.push('/');
-              });
-            } catch (error) {
-              console.log('(editEvent) Error, retrying with pending action!', error, state.id);
-
-              const db = await getDb();
-              // Check if a pending action currently exist for the current item.
-              const pendingDoc = db.pendingactions
-                .find()
-                .where('eventId')
-                .eq(state.id);
-              const result = await pendingDoc.exec();
-              if (result.length === 0) {
-                await db.pendingactions.upsert({
-                  uniqueId: uniqid(),
-                  eventId: state.id,
-                  status: 'pending',
-                  type: 'update'
-                });
-              }
-
-              const updateDoc = db.events
-                .find()
-                .where('originalId')
-                .eq(state.id);
-
-              await updateDoc.update({
-                $set: {
-                  summary: state.title,
-                  location: state.place.name,
-                  local: true
-                }
-              });
-              props.history.push('/');
-            }
+            const eventObject = {
+              id: state.id,
+              title: state.title,
+              user,
+              location: state.place,
+              originalId: state.originalId,
+              props
+            };
+            props.editEwsSingleEventBegin(eventObject);
             break;
           default:
             break;
@@ -314,101 +229,24 @@ export default class EditEvent extends React.Component {
               (object) => object.email === state.owner
             )[0]; // this validates which user the event belongs to, by email.
 
-            try {
-              const singleAppointment = await asyncGetSingleExchangeEvent(
-                user.email,
-                user.password,
-                'https://outlook.office365.com/Ews/Exchange.asmx',
-                state.recurringEventId
-              );
-
-              singleAppointment.Subject = state.title;
-              singleAppointment.Location = state.place.name;
-
-              console.log(this.createEwsRecurrenceObj(singleAppointment.Recurrence));
-
-              console.log(singleAppointment, singleAppointment.Recurrence);
-              // await asyncUpdateRecurrExchangeSeries(singleAppointment, user, () => {
-              //   props.history.push('/');
-              // });
-
-              // singleAppointment.Recurrence = new Recurrence.DailyPattern();
-
-              const exch = new ExchangeService();
-              exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
-              exch.Credentials = new ExchangeCredentials(user.email, user.password);
-
-              singleAppointment.Recurrence = this.createEwsRecurrenceObj(
-                singleAppointment.Recurrence
-              );
-              await asyncUpdateRecurrExchangeSeries(singleAppointment, user, async () => {
-                const allEwsEvents = await asyncGetRecurrAndSingleExchangeEvents(exch);
-                console.log(allEwsEvents);
-
-                const db = await getDb();
-
-                const updatedRecurrMasterAppointment = await asyncGetSingleExchangeEvent(
-                  user.email,
-                  user.password,
-                  'https://outlook.office365.com/Ews/Exchange.asmx',
-                  state.recurringEventId
-                );
-
-                const dbRecurrencePattern = parseEwsRecurringPatterns(
-                  updatedRecurrMasterAppointment.Id.UniqueId,
-                  updatedRecurrMasterAppointment.Recurrence
-                );
-
-                const query = db.recurrencepatterns
-                  .find()
-                  .where('id')
-                  .eq(state.recurrPatternId);
-
-                const test = await query.exec();
-                console.log(test, state.recurrPatternId);
-
-                await query.update({
-                  $set: {
-                    freq: dbRecurrencePattern.freq,
-                    interval: dbRecurrencePattern.interval,
-                    until: dbRecurrencePattern.until,
-                    exDates: dbRecurrencePattern.exDates,
-                    recurrenceIds: dbRecurrencePattern.recurrenceIds,
-                    recurringTypeId: dbRecurrencePattern.recurringTypeId,
-                    modifiedThenDeleted: dbRecurrencePattern.modifiedThenDeleted,
-                    weeklyPattern: dbRecurrencePattern.weeklyPattern,
-                    numberOfRepeats: dbRecurrencePattern.numberOfRepeats,
-                    iCalUid: dbRecurrencePattern.iCalUid
-                  }
-                });
-
-                // We can just add it in as it is a new event from future events.
-                await db.recurrencepatterns.upsert(dbRecurrencePattern);
-
-                await db.events
-                  .find()
-                  .where('iCalUID')
-                  .eq(singleAppointment.ICalUid)
-                  .remove();
-                console.log(
-                  allEwsEvents.filter((ewsEvent) => ewsEvent.ICalUid === singleAppointment.ICalUid)
-                );
-                await Promise.all(
-                  allEwsEvents
-                    .filter((ewsEvent) => ewsEvent.ICalUid === singleAppointment.ICalUid)
-                    .map((ewsEvent) =>
-                      filterIntoSchema(ewsEvent, state.providerType, user.email, false)
-                    )
-                    .map((filteredEwsEvent) => {
-                      console.log(filteredEwsEvent);
-                      return db.events.upsert(filteredEwsEvent);
-                    })
-                );
-                props.history.push('/');
-              });
-            } catch (error) {
-              console.log('(updateAll) Error, retrying with pending action!', error, state.id);
-            }
+            const eventObject = {
+              id: state.id,
+              title: state.title,
+              user,
+              location: state.place,
+              originalId: state.originalId,
+              recurringEventId: state.recurringEventId,
+              props,
+              firstOption: state.firstSelectedOption,
+              secondOption: state.selectedSecondRecurrOption,
+              recurrInterval: state.recurrInterval,
+              recurrPatternId: state.recurrPatternId,
+              untilType: state.thirdRecurrOptions,
+              untilDate: state.recurrEndDate,
+              untilAfter: state.thirdOptionAfter,
+              iCalUID: state.iCalUID
+            };
+            props.editEwsAllEventBegin(eventObject);
             break;
           default:
             console.log(`Have not handled ${state.providerType} updating of all recurring events.`);
@@ -422,129 +260,19 @@ export default class EditEvent extends React.Component {
               (object) => object.email === state.owner
             )[0];
 
-            try {
-              // asyncGetSingleExchangeEvent will throw error when no internet or event missing.
-              // Get master recurring event
-              const recurrMasterAppointment = await asyncGetSingleExchangeEvent(
-                user.email,
-                user.password,
-                'https://outlook.office365.com/Ews/Exchange.asmx',
-                state.recurringEventId
-              );
-
-              // Get the selected event to update this event
-              const singleAppointment = await asyncGetSingleExchangeEvent(
-                user.email,
-                user.password,
-                'https://outlook.office365.com/Ews/Exchange.asmx',
-                state.originalId
-              );
-
-              // Set the recurrance for the events not this and future to the end of selected
-              recurrMasterAppointment.Recurrence.EndDate = singleAppointment.End;
-
-              // Delete the current event, so that you can create a new one, with new recurrance
-              await asyncDeleteExchangeEvent(singleAppointment, user, () => {
-                // Lambda for future if needed.
-              });
-
-              const db = await getDb();
-
-              // Update recurrence object for server, and remove the future items in local db
-              await recurrMasterAppointment
-                .Update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsMode.SendToNone)
-                .then(async () => {
-                  const allevents = await db.events.find().exec();
-                  console.log(allevents);
-
-                  const removedDeletedEventsLocally = await db.events
-                    .find()
-                    .where('recurringEventId')
-                    .eq(state.recurringEventId)
-                    .exec();
-
-                  const afterEvents = removedDeletedEventsLocally.filter((event) =>
-                    moment(event.toJSON().start.dateTime).isAfter(singleAppointment.End.MomentDate)
-                  );
-
-                  await Promise.all(
-                    afterEvents.map((event) =>
-                      db.events
-                        .find()
-                        .where('originalId')
-                        .eq(event.originalId)
-                        .remove()
-                    )
-                  );
-                });
-
-              const exch = new ExchangeService();
-              exch.Url = new Uri('https://outlook.office365.com/Ews/Exchange.asmx');
-              exch.Credentials = new ExchangeCredentials(user.email, user.password);
-
-              // Create a new recurrence based off the old ones.
-              const newEvent = new Appointment(exch);
-
-              // TO-DO, add more fields for ews server in the future
-              newEvent.Subject = state.title;
-
-              newEvent.Recurrence = this.createEwsRecurrenceObj(newEvent.Recurrence);
-
-              // // The following are the recurrence-specific properties for the meeting.
-              // console.log(singleAppointment, singleAppointment.Start.DayOfWeek);
-              // const dow = [singleAppointment.Start.DayOfWeek];
-              // newEvent.Recurrence = new Recurrence.WeeklyPattern(
-              //   singleAppointment.Start.Date,
-              //   1,
-              //   dow
-              // );
-              // newEvent.Recurrence.StartDate = singleAppointment.Start.Date;
-              // newEvent.Recurrence.NumberOfOccurrences = 10;
-
-              // Upload it to server via Save, then re-get the data due to server side ID population.
-              await newEvent
-                .Save(WellKnownFolderName.Calendar, SendInvitationsMode.SendToAllAndSaveCopy)
-                .then(async () => {
-                  const item = await Item.Bind(exch, newEvent.Id);
-
-                  console.log(item);
-
-                  // Get all expanded events, and find the new ones within the window
-                  const allExchangeEvents = await asyncGetAllExchangeEvents(exch);
-                  const expandedItems = allExchangeEvents.filter(
-                    (event) => event.ICalUid === item.ICalUid
-                  );
-
-                  // Set the recurrence master ID to link them back, for updating/deleting of series.
-                  expandedItems.forEach((event) => (event.RecurrenceMasterId = item.Id));
-
-                  // Build a new recurrence pattern object, and parse it into the db.
-                  const dbRecurrencePattern = parseEwsRecurringPatterns(
-                    item.Id.UniqueId,
-                    item.Recurrence
-                  );
-
-                  // We can just add it in as it is a new event from future events.
-                  await db.recurrencepatterns.upsert(dbRecurrencePattern);
-
-                  // Upsert into db, can assume it does not exist as it is a new appointment.
-                  const promiseArr = expandedItems.map((event) => {
-                    const filteredEvent = filterIntoSchema(
-                      event,
-                      state.providerType,
-                      user.email,
-                      false
-                    );
-                    return db.events.upsert(filteredEvent);
-                  });
-
-                  // Wait for all and push it in.
-                  await Promise.all(promiseArr);
-                  props.history.push('/');
-                });
-            } catch (error) {
-              console.log('(editEvent) Error, retrying with pending action!', error, state.id);
-            }
+            const eventObject = {
+              id: state.id,
+              title: state.title,
+              user,
+              location: state.place,
+              originalId: state.originalId,
+              recurringEventId: state.recurringEventId,
+              props,
+              firstOption: state.firstSelectedOption,
+              secondOption: state.selectedSecondRecurrOption,
+              recurrInterval: state.recurrInterval
+            };
+            props.editEwsFutureEventBegin(eventObject);
             break;
           default:
             break;
@@ -570,6 +298,7 @@ export default class EditEvent extends React.Component {
   //     In order to retrive the event, I need to make a query from the script to get the javascript ews object. However, once I have it, I can update it easily.
   // */
   retrieveEvent = async (id) => {
+    console.log(id);
     const db = await getDb();
     const dbEvent = await db.events
       .find()
@@ -578,6 +307,7 @@ export default class EditEvent extends React.Component {
       .exec();
 
     const dbEventJSON = dbEvent[0].toJSON();
+    console.log(dbEventJSON);
 
     const text = recurrenceOptions.parseString(
       Math.ceil(moment(dbEventJSON.start.dateTime).date() / 7)
@@ -592,29 +322,22 @@ export default class EditEvent extends React.Component {
         .eq(dbEventJSON.recurringEventId)
         .exec();
 
-      console.log(dbEventRecurrence.toJSON());
+      console.log(dbEventRecurrence.toJSON(), dbEventRecurrence.numberOfRepeats);
 
-      const thirdRecurrChoice = recurrenceOptions.parseThirdRecurrOption(dbEventRecurrence.until);
+      const thirdRecurrChoice = recurrenceOptions.parseThirdRecurrOption(
+        dbEventRecurrence.until,
+        dbEventRecurrence.numberOfRepeats
+      );
 
       const firstSelected = recurrenceOptions.parseFreq(dbEventRecurrence.freq);
       const secondSelected = recurrenceOptions.parseFreqNumber(firstSelected);
 
       const selectedSecondRecurrOptions = [];
       if (firstSelected === 1) {
-        // selectedSecondRecurrOptions = [0, 0, 0, 0, 0, 0, 0];
-
-        // console.log('Before', selectedSecondRecurrOptions);
-        // dbEventRecurrence.weeklyPattern.forEach(
-        //   (index) => (selectedSecondRecurrOptions[index] = 1)
-        // );
-
-        // console.log('After', selectedSecondRecurrOptions);
         this.setState({
           selectedSecondRecurrOption: [0, dbEventRecurrence.weeklyPattern, 0, 0]
         });
       }
-
-      console.log(selectedSecondRecurrOptions, secondRecurrOptions[0]);
 
       this.setState({
         isRecurring: true,
@@ -626,7 +349,8 @@ export default class EditEvent extends React.Component {
         recurrStartDate: moment(dbEventRecurrence.recurringTypeId).format('YYYY-MM-DDTHH:mm:ssZ'),
         recurrEndDate: moment(dbEventRecurrence.until).format('YYYY-MM-DDTHH:mm:ssZ'),
         recurringMasterId: dbEventRecurrence.originalId,
-        recurrPatternId: dbEventRecurrence.id
+        recurrPatternId: dbEventRecurrence.id,
+        thirdOptionAfter: dbEventRecurrence.numberOfRepeats
       });
     }
 
@@ -880,6 +604,10 @@ export default class EditEvent extends React.Component {
     const endMenu = [];
     endMenu.push(
       <input type="button" onClick={this.handleSubmit} name="updateOne" value="Update this event" />
+    );
+
+    endMenu.push(
+      <input type="button" onClick={this.handleSubmit} name="return" value="Back to Calendar" />
     );
 
     if (state.isRecurring) {
