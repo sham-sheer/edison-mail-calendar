@@ -386,6 +386,16 @@ const buildRuleObject = (pattern, master) => {
   const ruleObject = {};
   ruleObject.interval = pattern.interval;
   ruleObject.dtstart = new Date(master.start.dateTime);
+  ruleObject.bymonth = pattern.bymonth ? pattern.bymonth : null;
+  ruleObject.bysetpos = pattern.bysetpos ? pattern.bysetpos : null;
+  ruleObject.bymonthday = pattern.bymonthday ? pattern.bymonthday : null;
+  ruleObject.byyearday = pattern.byyearday ? pattern.byyearday : null;
+  ruleObject.byhour = pattern.byhour ? pattern.byhour : null;
+  ruleObject.byminute = pattern.byminute ? pattern.byminute : null;
+  ruleObject.bysecond = pattern.bysecond ? pattern.bysecond : null;
+  ruleObject.byeaster = pattern.byeaster ? pattern.byeaster : null;
+  ruleObject.until = pattern.until ? new Date(pattern.until) : TEMPORARY_RECURRENCE_END;
+  ruleObject.count = pattern.count ? pattern.count : null;
   switch (pattern.freq) {
     case 'YEARLY':
       ruleObject.freq = 0;
@@ -487,16 +497,6 @@ const buildRuleObject = (pattern, master) => {
       ruleObject.byweekday = byweekdays;
     }
   }
-  ruleObject.bymonth = pattern.bymonth ? pattern.bymonth : null;
-  ruleObject.bysetpos = pattern.bysetpos ? pattern.bysetpos : null;
-  ruleObject.bymonthday = pattern.bymonthday ? pattern.bymonthday : null;
-  ruleObject.byyearday = pattern.byyearday ? pattern.byyearday : null;
-  ruleObject.byhour = pattern.byhour ? pattern.byhour : null;
-  ruleObject.byminute = pattern.byminute ? pattern.byminute : null;
-  ruleObject.bysecond = pattern.bysecond ? pattern.bysecond : null;
-  ruleObject.byeaster = pattern.byeaster ? pattern.byeaster : null;
-  ruleObject.until = pattern.until ? new Date(pattern.until) : TEMPORARY_RECURRENCE_END;
-  ruleObject.count = pattern.count ? pattern.count : null;
   return ruleObject;
 };
 
