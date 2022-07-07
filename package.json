@@ -279,7 +279,7 @@
     "jquery": "^1.9.1",
     "lodash": "^4.17.11",
     "md5": "^2.2.1",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "msal": "^0.2.4",
     "normalizr": "^3.3.0",
     "pouchdb-adapter-http": "^7.0.0",
